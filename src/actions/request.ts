@@ -45,15 +45,15 @@ export async function submitRequest(formData: FormData) {
   if (resend && process.env.RESEND_FROM_EMAIL) {
     try {
       const emailHtml = await render(
-        ManagerNotificationEmail({
-          id: newRequest.id,
-          requestedBy,
-          farmLocation,
-          category,
-          itemDetails,
-          urgency,
-          fileUrls: newRequest.fileUrls || [],
-        })
+        <ManagerNotificationEmail
+          id={newRequest.id}
+          requestedBy={requestedBy}
+          farmLocation={farmLocation}
+          category={category}
+          itemDetails={itemDetails}
+          urgency={urgency}
+          fileUrls={newRequest.fileUrls || []}
+        />
       );
 
       await resend.emails.send({
@@ -90,12 +90,12 @@ export async function approveRequest(id: string, comment?: string) {
     try {
       // 1. Notify Requester
       const requesterEmailHtml = await render(
-        ApprovalNotificationEmail({
-          requestedBy: updatedRequest.requestedBy,
-          category: updatedRequest.category,
-          itemDetails: updatedRequest.itemDetails,
-          managerComment: updatedRequest.managerComment,
-        })
+        <ApprovalNotificationEmail
+          requestedBy={updatedRequest.requestedBy}
+          category={updatedRequest.category}
+          itemDetails={updatedRequest.itemDetails}
+          managerComment={updatedRequest.managerComment}
+        />
       );
 
       await resend.emails.send({
@@ -107,16 +107,16 @@ export async function approveRequest(id: string, comment?: string) {
 
       // 2. Notify Accounts Department
       const accountsEmailHtml = await render(
-        AccountsNotificationEmail({
-          id: updatedRequest.id,
-          requestedBy: updatedRequest.requestedBy,
-          farmLocation: updatedRequest.farmLocation,
-          category: updatedRequest.category,
-          itemDetails: updatedRequest.itemDetails,
-          urgency: updatedRequest.urgency,
-          managerComment: updatedRequest.managerComment,
-          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        })
+        <AccountsNotificationEmail
+          id={updatedRequest.id}
+          requestedBy={updatedRequest.requestedBy}
+          farmLocation={updatedRequest.farmLocation}
+          category={updatedRequest.category}
+          itemDetails={updatedRequest.itemDetails}
+          urgency={updatedRequest.urgency}
+          managerComment={updatedRequest.managerComment}
+          appUrl={process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}
+        />
       );
 
       await resend.emails.send({
@@ -149,12 +149,12 @@ export async function denyRequest(id: string, comment?: string) {
   if (updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
     try {
       const emailHtml = await render(
-        DenialNotificationEmail({
-          requestedBy: updatedRequest.requestedBy,
-          category: updatedRequest.category,
-          itemDetails: updatedRequest.itemDetails,
-          managerComment: updatedRequest.managerComment,
-        })
+        <DenialNotificationEmail
+          requestedBy={updatedRequest.requestedBy}
+          category={updatedRequest.category}
+          itemDetails={updatedRequest.itemDetails}
+          managerComment={updatedRequest.managerComment}
+        />
       );
 
       await resend.emails.send({
