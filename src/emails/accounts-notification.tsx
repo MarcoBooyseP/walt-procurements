@@ -55,7 +55,7 @@ export const AccountsNotificationEmail: React.FC<Readonly<AccountsNotificationPr
       </a>
     </div>
     
-    <p style={{ mt: '32px', textAlign: 'center', borderTop: '1px solid #f3f4f6', paddingTop: '24px', color: '#9ca3af', fontSize: '12px' }}>
+    <p style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid #f3f4f6', paddingTop: '24px', color: '#9ca3af', fontSize: '12px' }}>
       Walt Landgoed Procurement System
     </p>
   </div>

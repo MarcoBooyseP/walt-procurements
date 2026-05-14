@@ -42,7 +42,7 @@ export const DenialNotificationEmail: React.FC<Readonly<DenialNotificationProps>
       If you have any questions, please contact your manager directly.
     </p>
     
-    <p style={{ mt: '32px', textAlign: 'center', borderTop: '1px solid #f3f4f6', paddingTop: '24px', color: '#9ca3af', fontSize: '12px' }}>
+    <p style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid #f3f4f6', paddingTop: '24px', color: '#9ca3af', fontSize: '12px' }}>
       Walt Landgoed Procurement System
     </p>
   </div>
