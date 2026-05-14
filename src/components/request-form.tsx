@@ -7,6 +7,7 @@ export function RequestForm() {
   const [isPending, startTransition] = useTransition();
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,6 +28,29 @@ export function RequestForm() {
   };
 
   async function action(formData: FormData) {
+    // Basic validation
+    const newErrors: Record<string, string> = {};
+    const requestedBy = formData.get("requestedBy") as string;
+    const farmLocation = formData.get("farmLocation") as string;
+    const category = formData.get("category") as string;
+    const itemDetails = formData.get("itemDetails") as string;
+
+    if (!requestedBy) newErrors.requestedBy = "Please select your name";
+    if (!farmLocation) newErrors.farmLocation = "Please select a location";
+    if (!category) newErrors.category = "Please select a category";
+    if (!itemDetails || itemDetails.trim().length < 5) newErrors.itemDetails = "Please provide more details (min 5 chars)";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Scroll to first error
+      const firstError = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstError);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    setErrors({});
+    
     // Append all selected files to formData
     formData.delete("photoAttachment"); // Remove the single entry if it exists
     selectedFiles.forEach((file) => {
@@ -66,17 +90,18 @@ export function RequestForm() {
   }
 
   return (
-    <form action={action} className="flex flex-col gap-6 w-full pb-4">
+    <form action={action} noValidate className="flex flex-col gap-6 w-full pb-4">
       {/* Requested By */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="requestedBy" className="font-semibold text-brand-gray text-[17px]">Requested By</label>
+        <label htmlFor="requestedBy" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Requested By <span className="text-brand-red">*</span>
+        </label>
         <div className="relative">
           <select 
             name="requestedBy" 
             id="requestedBy" 
-            required 
             defaultValue=""
-            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-shadow"
+            className={`w-full p-4 bg-white border ${errors.requestedBy ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
             <option value="" disabled></option>
             <option value="Jan van der Merwe">Jan van der Merwe</option>
@@ -89,18 +114,20 @@ export function RequestForm() {
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
           </div>
         </div>
+        {errors.requestedBy && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.requestedBy}</span>}
       </div>
 
       {/* Farm Location */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="farmLocation" className="font-semibold text-brand-gray text-[17px]">Farm Location</label>
+        <label htmlFor="farmLocation" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Farm Location <span className="text-brand-red">*</span>
+        </label>
         <div className="relative">
           <select 
             name="farmLocation" 
             id="farmLocation" 
-            required 
             defaultValue=""
-            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-shadow"
+            className={`w-full p-4 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
             <option value="" disabled></option>
             <option value="Roodekuil">Roodekuil</option>
@@ -115,18 +142,20 @@ export function RequestForm() {
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
           </div>
         </div>
+        {errors.farmLocation && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.farmLocation}</span>}
       </div>
 
       {/* Category */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="category" className="font-semibold text-brand-gray text-[17px]">Category</label>
+        <label htmlFor="category" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Category <span className="text-brand-red">*</span>
+        </label>
         <div className="relative">
           <select 
             name="category" 
             id="category" 
-            required 
             defaultValue=""
-            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-shadow"
+            className={`w-full p-4 bg-white border ${errors.category ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
             <option value="" disabled></option>
             <option value="Supplies">Supplies</option>
@@ -140,19 +169,22 @@ export function RequestForm() {
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
           </div>
         </div>
+        {errors.category && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.category}</span>}
       </div>
 
       {/* Item Details */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="itemDetails" className="font-semibold text-brand-gray text-[17px]">Item requested details and reason</label>
+        <label htmlFor="itemDetails" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Item requested details and reason <span className="text-brand-red">*</span>
+        </label>
         <textarea 
           name="itemDetails" 
           id="itemDetails" 
-          required 
           rows={3}
           placeholder="E.g. 5 bags of starter feed because the silo is almost empty"
-          className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-shadow resize-none"
+          className={`w-full p-4 bg-white border ${errors.itemDetails ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none`}
         ></textarea>
+        {errors.itemDetails && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.itemDetails}</span>}
       </div>
 
       {/* Urgency */}
