@@ -50,7 +50,7 @@ export function RequestForm() {
     }
 
     setErrors({});
-    
+
     // Append all selected files to formData
     formData.delete("photoAttachment"); // Remove the single entry if it exists
     selectedFiles.forEach((file) => {
@@ -79,7 +79,7 @@ export function RequestForm() {
         </div>
         <h2 className="text-2xl font-bold text-brand-gray mb-2">Request Submitted!</h2>
         <p className="text-brand-gray/80 mb-8 max-w-xs">Your supply request has been successfully sent to the manager for review.</p>
-        <button 
+        <button
           onClick={() => setIsSuccess(false)}
           className="px-6 py-4 bg-brand-red text-white font-semibold text-lg rounded-xl shadow-md hover:bg-brand-red/90 active:bg-brand-red/80 w-full transition-all"
         >
@@ -97,9 +97,9 @@ export function RequestForm() {
           Requested By <span className="text-brand-red">*</span>
         </label>
         <div className="relative">
-          <select 
-            name="requestedBy" 
-            id="requestedBy" 
+          <select
+            name="requestedBy"
+            id="requestedBy"
             defaultValue=""
             className={`w-full p-4 bg-white border ${errors.requestedBy ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
@@ -123,9 +123,9 @@ export function RequestForm() {
           Farm Location <span className="text-brand-red">*</span>
         </label>
         <div className="relative">
-          <select 
-            name="farmLocation" 
-            id="farmLocation" 
+          <select
+            name="farmLocation"
+            id="farmLocation"
             defaultValue=""
             className={`w-full p-4 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
@@ -151,9 +151,9 @@ export function RequestForm() {
           Category <span className="text-brand-red">*</span>
         </label>
         <div className="relative">
-          <select 
-            name="category" 
-            id="category" 
+          <select
+            name="category"
+            id="category"
             defaultValue=""
             className={`w-full p-4 bg-white border ${errors.category ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
@@ -177,9 +177,9 @@ export function RequestForm() {
         <label htmlFor="itemDetails" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
           Item requested details and reason <span className="text-brand-red">*</span>
         </label>
-        <textarea 
-          name="itemDetails" 
-          id="itemDetails" 
+        <textarea
+          name="itemDetails"
+          id="itemDetails"
           rows={3}
           placeholder="E.g. 5 bags of starter feed because the silo is almost empty"
           className={`w-full p-4 bg-white border ${errors.itemDetails ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none`}
@@ -196,13 +196,13 @@ export function RequestForm() {
             <span className="ml-3 text-[17px] font-medium text-brand-gray">Low</span>
             <span className="ml-auto text-sm text-brand-gray/70">Regular restock</span>
           </label>
-          
+
           <label className="relative flex items-center p-4 border border-gray-200 rounded-xl bg-white shadow-sm cursor-pointer hover:bg-gray-50 transition-colors focus-within:ring-2 focus-within:ring-yellow-500 has-[:checked]:border-yellow-500 has-[:checked]:bg-yellow-50/50">
             <input type="radio" name="urgency" value="Medium" className="w-5 h-5 text-yellow-600 border-gray-300 focus:ring-yellow-500" />
             <span className="ml-3 text-[17px] font-medium text-brand-gray">Medium</span>
             <span className="ml-auto text-sm text-yellow-600 font-medium">Need soon</span>
           </label>
-          
+
           <label className="relative flex items-center p-4 border border-gray-200 rounded-xl bg-white shadow-sm cursor-pointer hover:bg-gray-50 transition-colors focus-within:ring-2 focus-within:ring-brand-red has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50">
             <input type="radio" name="urgency" value="Critical" className="w-5 h-5 text-brand-red border-gray-300 focus:ring-brand-red" />
             <span className="ml-3 text-[17px] font-bold text-brand-red">Critical</span>
@@ -216,7 +216,7 @@ export function RequestForm() {
         <label htmlFor="photoAttachment" className="font-semibold text-brand-gray text-[17px]">
           Attach photo or file <span className="font-normal text-brand-gray/60">(Up to 3)</span>
         </label>
-        
+
         {selectedFiles.length < 3 && (
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-brand-red">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -227,11 +227,11 @@ export function RequestForm() {
                 {selectedFiles.length === 0 ? "Tap to upload a photo or file" : "Tap to add another file"}
               </p>
             </div>
-            <input 
-              type="file" 
-              name="photoAttachment" 
-              id="photoAttachment" 
-              className="sr-only" 
+            <input
+              type="file"
+              name="photoAttachment"
+              id="photoAttachment"
+              className="sr-only"
               multiple
               ref={fileInputRef}
               onChange={handleFileChange}
@@ -251,7 +251,7 @@ export function RequestForm() {
                   </svg>
                   <span className="text-[14px] text-brand-gray font-medium truncate">{file.name}</span>
                 </div>
-                <button 
+                <button
                   type="button"
                   onClick={() => removeFile(index)}
                   className="p-1 hover:bg-gray-200 rounded-full text-brand-red transition-colors"
@@ -267,8 +267,8 @@ export function RequestForm() {
       </div>
 
       {/* Submit */}
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={isPending}
         className="mt-6 w-full py-5 px-6 bg-brand-red text-white text-[19px] font-bold rounded-xl shadow-lg hover:bg-brand-red/90 active:bg-brand-red/80 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center"
       >

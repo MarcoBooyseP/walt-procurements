@@ -58,7 +58,8 @@ export async function submitRequest(formData: FormData) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"], // Send to Marco for PoC
+        to: ["hannes@waltlandgoed.com"],
+        bcc: ["marco@middelman.co.za"],
         subject: `[${urgency}] New Supply Request from ${requestedBy}`,
         html: emailHtml,
       });
@@ -100,7 +101,8 @@ export async function approveRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"], // Placeholder for requester
+        to: ["hannes@waltlandgoed.com"],
+        bcc: ["marco@middelman.co.za"],
         subject: `Request Approved: ${updatedRequest.category} request`,
         html: requesterEmailHtml,
       });
@@ -121,7 +123,8 @@ export async function approveRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"], // Placeholder for accounts department
+        to: ["hannes@waltlandgoed.com"],
+        bcc: ["marco@middelman.co.za"],
         subject: `FOR PROCUREMENT: ${updatedRequest.requestedBy} - ${updatedRequest.category}`,
         html: accountsEmailHtml,
       });
@@ -159,7 +162,8 @@ export async function denyRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"], // Placeholder for now
+        to: ["hannes@waltlandgoed.com"],
+        bcc: ["marco@middelman.co.za"],
         subject: `Request Denied: ${updatedRequest.category} request`,
         html: emailHtml,
       });
