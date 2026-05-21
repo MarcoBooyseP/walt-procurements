@@ -58,7 +58,7 @@ export default async function HomePage() {
         <div className="flex flex-col gap-3">
           <form action={async () => {
             "use server";
-            await signOut();
+            await signOut({ redirectTo: "/" });
           }}>
             <button 
               type="submit"
