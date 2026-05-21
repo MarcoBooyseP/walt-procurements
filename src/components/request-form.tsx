@@ -3,7 +3,22 @@
 import { useState, useTransition, useRef } from "react";
 import { submitRequest } from "@/actions/request";
 
-export function RequestForm() {
+type Location = { id: string; name: string };
+type Category = { id: string; name: string };
+
+export function RequestForm({ 
+  userName, 
+  userId, 
+  userRole,
+  locations,
+  categories 
+}: { 
+  userName: string; 
+  userId: string; 
+  userRole: string;
+  locations: Location[];
+  categories: Category[];
+}) {
   const [isPending, startTransition] = useTransition();
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -30,19 +45,16 @@ export function RequestForm() {
   async function action(formData: FormData) {
     // Basic validation
     const newErrors: Record<string, string> = {};
-    const requestedBy = formData.get("requestedBy") as string;
     const farmLocation = formData.get("farmLocation") as string;
     const category = formData.get("category") as string;
     const itemDetails = formData.get("itemDetails") as string;
 
-    if (!requestedBy) newErrors.requestedBy = "Please select your name";
     if (!farmLocation) newErrors.farmLocation = "Please select a location";
     if (!category) newErrors.category = "Please select a category";
     if (!itemDetails || itemDetails.trim().length < 5) newErrors.itemDetails = "Please provide more details (min 5 chars)";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      // Scroll to first error
       const firstError = Object.keys(newErrors)[0];
       const element = document.getElementById(firstError);
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -52,7 +64,7 @@ export function RequestForm() {
     setErrors({});
 
     // Append all selected files to formData
-    formData.delete("photoAttachment"); // Remove the single entry if it exists
+    formData.delete("photoAttachment");
     selectedFiles.forEach((file) => {
       formData.append("photoAttachment", file);
     });
@@ -91,30 +103,13 @@ export function RequestForm() {
 
   return (
     <form action={action} noValidate className="flex flex-col gap-6 w-full pb-4">
-      {/* Requested By */}
+      {/* Requested By - auto-populated, read-only */}
+      <input type="hidden" name="requestedBy" value={userName} />
+      <input type="hidden" name="submittedByUserId" value={userId} />
+      <input type="hidden" name="submittedByRole" value={userRole} />
       <div className="flex flex-col gap-2">
-        <label htmlFor="requestedBy" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
-          Requested By <span className="text-brand-red">*</span>
-        </label>
-        <div className="relative">
-          <select
-            name="requestedBy"
-            id="requestedBy"
-            defaultValue=""
-            className={`w-full p-4 bg-white border ${errors.requestedBy ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
-          >
-            <option value="" disabled></option>
-            <option value="Jan van der Merwe">Jan van der Merwe</option>
-            <option value="Pieter Groenewald">Pieter Groenewald</option>
-            <option value="Sipho Khumalo">Sipho Khumalo</option>
-            <option value="Marco Booyse">Marco Booyse</option>
-            <option value="Johan Botha">Johan Botha</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-        {errors.requestedBy && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.requestedBy}</span>}
+        <label className="font-semibold text-brand-gray text-[17px]">Requested By</label>
+        <p className="text-[17px] font-bold text-brand-gray px-1">{userName || "—"}</p>
       </div>
 
       {/* Farm Location */}
@@ -130,13 +125,11 @@ export function RequestForm() {
             className={`w-full p-4 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
             <option value="" disabled></option>
-            <option value="Roodekuil">Roodekuil</option>
-            <option value="Zoetdoornlaagte">Zoetdoornlaagte</option>
-            <option value="Leeuwkuil">Leeuwkuil</option>
-            <option value="Turfpan">Turfpan</option>
-            <option value="Meisjesvlei">Meisjesvlei</option>
-            <option value="Maple leaf">Maple leaf</option>
-            <option value="Turffontein">Turffontein</option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.name}>
+                {loc.name}
+              </option>
+            ))}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -158,12 +151,11 @@ export function RequestForm() {
             className={`w-full p-4 bg-white border ${errors.category ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
           >
             <option value="" disabled></option>
-            <option value="Supplies">Supplies</option>
-            <option value="Tools">Tools</option>
-            <option value="Consumables">Consumables</option>
-            <option value="Feed">Feed</option>
-            <option value="Vet">Vet / Medicine</option>
-            <option value="Other">Other</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>

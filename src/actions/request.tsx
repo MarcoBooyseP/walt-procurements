@@ -14,6 +14,8 @@ import { uploadToS3 } from "@/lib/s3";
 
 export async function submitRequest(formData: FormData) {
   const requestedBy = formData.get("requestedBy") as string;
+  const submittedByUserId = formData.get("submittedByUserId") as string;
+  const submittedByRole = formData.get("submittedByRole") as string;
   const farmLocation = formData.get("farmLocation") as string;
   const category = formData.get("category") as string;
   const itemDetails = formData.get("itemDetails") as string;
@@ -32,38 +34,49 @@ export async function submitRequest(formData: FormData) {
     }
   }
 
+  // Managers and Admins skip manager approval — their requests go straight to APPROVED
+  const isElevatedRole = submittedByRole === "MANAGER" || submittedByRole === "ADMIN";
+  const initialStatus = isElevatedRole ? "APPROVED" : "PENDING";
+
   const [newRequest] = await db.insert(requests).values({
     requestedBy,
+    submittedByUserId: submittedByUserId || null,
     farmLocation,
     category,
     itemDetails,
     urgency,
     fileUrls,
-    status: "PENDING"
+    status: initialStatus,
   }).returning();
 
   if (resend && process.env.RESEND_FROM_EMAIL) {
     try {
-      const emailHtml = await render(
-        <ManagerNotificationEmail
-          id={newRequest.id}
-          requestedBy={requestedBy}
-          farmLocation={farmLocation}
-          category={category}
-          itemDetails={itemDetails}
-          urgency={urgency}
-          fileUrls={newRequest.fileUrls || []}
-        />
-      );
+      if (isElevatedRole) {
+        // Skip manager approval — notify accountant directly for processing
+        // (email logic to be wired up later)
+        console.log(`[RESEND] ${submittedByRole} request auto-approved for Request: ${newRequest.id}. Accountant notification pending.`);
+      } else {
+        // EMPLOYEE: notify manager for approval
+        const emailHtml = await render(
+          <ManagerNotificationEmail
+            id={newRequest.id}
+            requestedBy={requestedBy}
+            farmLocation={farmLocation}
+            category={category}
+            itemDetails={itemDetails}
+            urgency={urgency}
+            fileUrls={newRequest.fileUrls || []}
+          />
+        );
 
-      await resend.emails.send({
-        from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["hannes@waltlandgoed.com"],
-        bcc: ["marco@middelman.co.za"],
-        subject: `[${urgency}] New Supply Request from ${requestedBy}`,
-        html: emailHtml,
-      });
-      console.log(`[RESEND] Dispatched email for Request: ${newRequest.id}`);
+        await resend.emails.send({
+          from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
+          to: ["marco@middelman.co.za"],
+          subject: `[${urgency}] New Supply Request from ${requestedBy}`,
+          html: emailHtml,
+        });
+        console.log(`[RESEND] Dispatched manager notification for Request: ${newRequest.id}`);
+      }
     } catch (error) {
       console.error("[RESEND] Failed to send email", error);
     }
@@ -101,8 +114,7 @@ export async function approveRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["hannes@waltlandgoed.com"],
-        bcc: ["marco@middelman.co.za"],
+        to: ["marco@middelman.co.za"],
         subject: `Request Approved: ${updatedRequest.category} request`,
         html: requesterEmailHtml,
       });
@@ -123,8 +135,7 @@ export async function approveRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["hannes@waltlandgoed.com"],
-        bcc: ["marco@middelman.co.za"],
+        to: ["marco@middelman.co.za"],
         subject: `FOR PROCUREMENT: ${updatedRequest.requestedBy} - ${updatedRequest.category}`,
         html: accountsEmailHtml,
       });
@@ -162,8 +173,7 @@ export async function denyRequest(id: string, comment?: string) {
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["hannes@waltlandgoed.com"],
-        bcc: ["marco@middelman.co.za"],
+        to: ["marco@middelman.co.za"],
         subject: `Request Denied: ${updatedRequest.category} request`,
         html: emailHtml,
       });
