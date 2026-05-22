@@ -75,7 +75,10 @@ export function AdminClient({
         </nav>
         <div className="p-4 border-t border-gray-100">
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={async () => {
+              await signOut({ redirect: false });
+              window.location.href = "/";
+            }}
             className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-brand-red hover:text-red-800 transition-colors gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
