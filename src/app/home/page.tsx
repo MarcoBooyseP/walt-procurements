@@ -1,10 +1,13 @@
 import { RequestForm } from "@/components/request-form";
+import { ManagerDashboard } from "@/components/manager-dashboard";
+import { DirectorDashboard } from "@/components/director-dashboard";
 import { SignOutButton } from "@/components/sign-out-button";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { db } from "@/db";
-import { users, locations, categories } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { users, locations, categories, requests } from "@/db/schema";
+import { eq, asc, desc, and } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 export default async function HomePage() {
   const session = await auth();
@@ -13,9 +16,13 @@ export default async function HomePage() {
 
   // Fetch full user record for name and role
   const [dbUser] = sessionUser?.id
-    ? await db.select({ id: users.id, name: users.name, surname: users.surname, role: users.role })
+    ? await db.select({ id: users.id, name: users.name, surname: users.surname, role: users.role, locationId: users.locationId })
         .from(users).where(eq(users.id, sessionUser.id)).limit(1)
     : [null];
+
+  if (dbUser?.role === "ADMIN") {
+    redirect("/admin");
+  }
 
   const locationsList = await db
     .select({ id: locations.id, name: locations.name })
@@ -26,6 +33,40 @@ export default async function HomePage() {
     .select({ id: categories.id, name: categories.name })
     .from(categories)
     .orderBy(asc(categories.name));
+
+  const userLocationName = locationsList.find(l => l.id === dbUser?.locationId)?.name || "";
+
+  let pendingRequests: any[] = [];
+  if (dbUser?.role === "MANAGER") {
+    pendingRequests = await db
+      .select({
+        id: requests.id,
+        requestedBy: requests.requestedBy,
+        submittedByUserId: requests.submittedByUserId,
+        farmLocation: requests.farmLocation,
+        category: requests.category,
+        itemDetails: requests.itemDetails,
+        urgency: requests.urgency,
+        quantity: requests.quantity,
+        status: requests.status,
+        createdAt: requests.createdAt
+      })
+      .from(requests)
+      .innerJoin(users, eq(requests.submittedByUserId, users.id))
+      .where(
+        and(
+          eq(requests.status, "PENDING"),
+          eq(users.managerId, dbUser.id)
+        )
+      )
+      .orderBy(desc(requests.createdAt));
+  } else if (dbUser?.role === "DIRECTOR") {
+    pendingRequests = await db
+      .select()
+      .from(requests)
+      .where(eq(requests.status, "PENDING_DIRECTOR"))
+      .orderBy(desc(requests.createdAt));
+  }
 
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col items-center pb-10">
@@ -43,13 +84,49 @@ export default async function HomePage() {
 
         {/* Form Container */}
         <div className="flex-1 px-5 py-8 sm:p-8 bg-gray-50/50 flex flex-col">
-          <RequestForm 
-            userName={dbUser ? `${dbUser.name} ${dbUser.surname}` : ""}
-            userId={dbUser?.id ?? ""}
-            userRole={dbUser?.role ?? "USER"}
-            locations={locationsList}
-            categories={categoriesList}
-          />
+          {dbUser?.role === "EMPLOYEE" ? (
+            <RequestForm 
+              userName={dbUser ? `${dbUser.name} ${dbUser.surname}` : ""}
+              userId={dbUser?.id ?? ""}
+              userRole={dbUser?.role ?? "USER"}
+              userLocationName={userLocationName}
+              locations={locationsList}
+              categories={categoriesList}
+            />
+          ) : dbUser?.role === "MANAGER" ? (
+            <ManagerDashboard 
+              requests={pendingRequests}
+              userName={dbUser ? `${dbUser.name} ${dbUser.surname}` : ""}
+              userId={dbUser?.id ?? ""}
+              userRole={dbUser?.role ?? "USER"}
+              userLocationName={userLocationName}
+              locations={locationsList}
+              categories={categoriesList}
+            />
+          ) : dbUser?.role === "DIRECTOR" ? (
+            <DirectorDashboard 
+              requests={pendingRequests}
+              userName={dbUser ? `${dbUser.name} ${dbUser.surname}` : ""}
+              userId={dbUser?.id ?? ""}
+              userRole={dbUser?.role ?? "USER"}
+              userLocationName={userLocationName}
+              locations={locationsList}
+              categories={categoriesList}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Welcome, {dbUser?.name}</h2>
+              <p className="text-gray-500 mt-2 font-medium">You are logged in as a {dbUser?.role}.</p>
+              <p className="text-gray-400 text-sm mt-4 max-w-xs">
+                Supply requests are initiated by employees. Please use the links provided in your email notifications to review pending requests.
+              </p>
+            </div>
+          )}
         </div>
         
       </div>

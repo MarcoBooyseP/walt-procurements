@@ -3,10 +3,10 @@ import { requests } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { approveRequest, denyRequest } from "@/actions/request";
+import { directorApproveRequest, directorDenyRequest } from "@/actions/request";
 import Link from "next/link";
 
-export default async function ManagerReviewPage({
+export default async function DirectorReviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -47,7 +47,7 @@ export default async function ManagerReviewPage({
         </div>
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           <div className="px-6 py-6 border-b border-gray-50 bg-gray-50/50">
-            <h1 className="text-xl font-bold text-brand-gray">Manager Review</h1>
+            <h1 className="text-xl font-bold text-brand-gray">Director Final Review</h1>
             <p className="text-sm text-brand-gray/60">ID: {request.id.slice(0, 8)}...</p>
           </div>
 
@@ -98,6 +98,15 @@ export default async function ManagerReviewPage({
                 </div>
               </div>
 
+              {request.managerComment && (
+                <div className="pt-2">
+                  <label className="text-xs font-bold text-brand-gray/50 uppercase">Manager Comment</label>
+                  <div className="mt-1 p-4 bg-blue-50 rounded-xl text-blue-900 border border-blue-100 leading-relaxed italic">
+                    "{request.managerComment}"
+                  </div>
+                </div>
+              )}
+
               {/* Attachments */}
               {request.fileUrls && request.fileUrls.length > 0 && (
                 <div className="pt-2">
@@ -135,28 +144,28 @@ export default async function ManagerReviewPage({
             </div>
 
             {/* Actions */}
-            {request.status === "PENDING" && (
+            {request.status === "PENDING_DIRECTOR" && (
               <div className="pt-4 space-y-6">
                 <form action={async (formData: FormData) => {
                   "use server";
-                  const comment = formData.get("managerComment") as string;
+                  const comment = formData.get("directorComment") as string;
                   const action = formData.get("action") as string;
                   
                   if (action === "approve") {
-                    await approveRequest(request.id, comment);
+                    await directorApproveRequest(request.id, comment);
                   } else {
-                    await denyRequest(request.id, comment);
+                    await directorDenyRequest(request.id, comment);
                   }
                 }} className="space-y-6">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="managerComment" className="text-sm font-bold text-brand-gray uppercase tracking-wider">
-                      Manager Comment <span className="font-normal text-brand-gray/40">(Optional)</span>
+                    <label htmlFor="directorComment" className="text-sm font-bold text-brand-gray uppercase tracking-wider">
+                      Director Comment <span className="font-normal text-brand-gray/40">(Optional)</span>
                     </label>
                     <textarea
-                      id="managerComment"
-                      name="managerComment"
+                      id="directorComment"
+                      name="directorComment"
                       rows={3}
-                      placeholder="Add any instructions or reasons for denial here..."
+                      placeholder="Add any final instructions or reasons for denial here..."
                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none"
                     ></textarea>
                   </div>
@@ -190,14 +199,8 @@ export default async function ManagerReviewPage({
               </div>
             )}
 
-            {request.status !== "PENDING" && (
+            {request.status !== "PENDING_DIRECTOR" && (
               <div className="pt-6 space-y-6">
-                {request.managerComment && (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <label className="text-xs font-bold text-brand-gray/50 uppercase block mb-1">Manager Comment</label>
-                    <p className="text-brand-gray italic">"{request.managerComment}"</p>
-                  </div>
-                )}
                 {request.directorComment && (
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <label className="text-xs font-bold text-brand-gray/50 uppercase block mb-1">Director Comment</label>
@@ -206,8 +209,8 @@ export default async function ManagerReviewPage({
                 )}
                 <div className="text-center">
                   <p className="text-brand-gray/50 font-medium italic">
-                    {request.status === "PENDING_DIRECTOR" 
-                      ? "You have approved this request. It is now pending final approval."
+                    {request.status === "PENDING"
+                      ? "This request is pending manager review. You cannot review it yet."
                       : `This request has been ${request.status.toLowerCase()}.`}
                   </p>
                 </div>

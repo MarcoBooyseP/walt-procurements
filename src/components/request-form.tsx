@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import { submitRequest } from "@/actions/request";
+import Link from "next/link";
 
 type Location = { id: string; name: string };
 type Category = { id: string; name: string };
@@ -10,12 +11,14 @@ export function RequestForm({
   userName, 
   userId, 
   userRole,
+  userLocationName,
   locations,
   categories 
 }: { 
   userName: string; 
   userId: string; 
   userRole: string;
+  userLocationName: string;
   locations: Location[];
   categories: Category[];
 }) {
@@ -113,30 +116,38 @@ export function RequestForm({
       </div>
 
       {/* Farm Location */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor="farmLocation" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
-          Farm Location <span className="text-brand-red">*</span>
-        </label>
-        <div className="relative">
-          <select
-            name="farmLocation"
-            id="farmLocation"
-            defaultValue=""
-            className={`w-full p-4 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
-          >
-            <option value="" disabled></option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.name}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-          </div>
+      {userRole === "EMPLOYEE" ? (
+        <div className="flex flex-col gap-2">
+          <label className="font-semibold text-brand-gray text-[17px]">Farm Location</label>
+          <input type="hidden" name="farmLocation" value={userLocationName} />
+          <p className="text-[17px] font-bold text-brand-gray px-1">{userLocationName || "—"}</p>
         </div>
-        {errors.farmLocation && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.farmLocation}</span>}
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="farmLocation" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+            Farm Location <span className="text-brand-red">*</span>
+          </label>
+          <div className="relative">
+            <select
+              name="farmLocation"
+              id="farmLocation"
+              defaultValue=""
+              className={`w-full p-4 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
+            >
+              <option value="" disabled></option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.name}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
+          {errors.farmLocation && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.farmLocation}</span>}
+        </div>
+      )}
 
       {/* Category */}
       <div className="flex flex-col gap-2">
@@ -173,10 +184,25 @@ export function RequestForm({
           name="itemDetails"
           id="itemDetails"
           rows={3}
-          placeholder="E.g. 5 bags of starter feed because the silo is almost empty"
+          placeholder="E.g. bags of starter feed because the silo is almost empty"
           className={`w-full p-4 bg-white border ${errors.itemDetails ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-xl text-[17px] text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none`}
         ></textarea>
         {errors.itemDetails && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.itemDetails}</span>}
+      </div>
+
+      {/* Quantity */}
+      <div className="flex flex-col gap-2">
+        <label htmlFor="quantity" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Quantity <span className="font-normal text-brand-gray/60">(Optional)</span>
+        </label>
+        <input
+          type="number"
+          name="quantity"
+          id="quantity"
+          defaultValue="1"
+          min="1"
+          className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all"
+        />
       </div>
 
       {/* Urgency */}
@@ -274,6 +300,15 @@ export function RequestForm({
           </span>
         ) : "Submit Request"}
       </button>
+
+      {userRole !== "MANAGER" && userRole !== "DIRECTOR" && (
+        <Link 
+          href="/requests"
+          className="mt-2 w-full py-4 px-6 bg-white border-2 border-gray-200 text-gray-700 text-[17px] font-bold rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-all flex items-center justify-center"
+        >
+          Track My Requests
+        </Link>
+      )}
     </form>
   );
 }

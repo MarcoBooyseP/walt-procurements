@@ -8,9 +8,16 @@ export const requests = pgTable("requests", {
   category: text("category").notNull(),
   itemDetails: text("itemDetails").notNull(),
   urgency: text("urgency").default("Low").notNull(),
+  quantity: text("quantity").default("1"),
   fileUrls: jsonb("fileUrls").$type<string[]>(),
   managerComment: text("managerComment"),
+  directorComment: text("directorComment"),
   status: text("status").default("PENDING").notNull(),
+  managerApprovalDate: timestamp("managerApprovalDate"),
+  directorApprovalDate: timestamp("directorApprovalDate"),
+  orderPlacedDate: timestamp("orderPlacedDate"),
+  orderReceivedDate: timestamp("orderReceivedDate"),
+  orderPickedUpDate: timestamp("orderPickedUpDate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -23,7 +30,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").default("USER").notNull(),
   managerId: uuid("managerId"),
-  accountantId: uuid("accountantId"),
+  locationId: uuid("locationId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
