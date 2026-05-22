@@ -30,17 +30,43 @@ export function AdminClient({
   requestsData: any[];
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Admin Portal</h1>
+        <button 
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          {isMobileSidebarOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen">
-        <div className="p-6 border-b border-gray-100">
+      <aside className={`fixed md:sticky top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+        <div className="p-6 border-b border-gray-100 hidden md:block">
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Admin Portal</h1>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <button
-            onClick={() => setActiveTab("overview")}
+            onClick={() => {
+              setActiveTab("overview");
+              setIsMobileSidebarOpen(false);
+            }}
             className={`w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-colors ${
               activeTab === "overview"
                 ? "bg-gray-900 text-white"
@@ -51,7 +77,10 @@ export function AdminClient({
             Overview
           </button>
           <button
-            onClick={() => setActiveTab("analytics")}
+            onClick={() => {
+              setActiveTab("analytics");
+              setIsMobileSidebarOpen(false);
+            }}
             className={`w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-colors ${
               activeTab === "analytics"
                 ? "bg-gray-900 text-white"
@@ -62,7 +91,10 @@ export function AdminClient({
             Analytics
           </button>
           <button
-            onClick={() => setActiveTab("settings")}
+            onClick={() => {
+              setActiveTab("settings");
+              setIsMobileSidebarOpen(false);
+            }}
             className={`w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-colors ${
               activeTab === "settings"
                 ? "bg-gray-900 text-white"
@@ -90,8 +122,8 @@ export function AdminClient({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto h-screen">
-        <div className="p-8 max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto min-h-screen md:h-screen">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto">
           {activeTab === "overview" && (
             <PurchaseOrderTable requests={requestsData} />
           )}
