@@ -45,3 +45,8 @@ next-env.d.ts
 
 # mem temp artifacts (onboard output)
 .mem/tmp/
+
+# mem worktree symlinks (auto-added)
+.mem/docs/data
+.claude
+.claude/
