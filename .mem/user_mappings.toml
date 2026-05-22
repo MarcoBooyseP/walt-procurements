@@ -1,0 +1,6 @@
+# GitHub username to Git user mappings
+# Each section is a GitHub username with name and email for commits
+
+[MarcoBooyseP]
+name = "Marco Booyse"
+email = "booysemarco@gmail.com"

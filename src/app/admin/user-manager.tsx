@@ -12,15 +12,15 @@ type User = {
   role: string;
 };
 
-export function UserManager({ 
-  title, 
-  role, 
-  users, 
+export function UserManager({
+  title,
+  role,
+  users,
   availableManagers,
   availableAccountants
-}: { 
-  title: string, 
-  role: string, 
+}: {
+  title: string,
+  role: string,
   users: User[],
   availableManagers?: User[],
   availableAccountants?: User[]
@@ -36,7 +36,7 @@ export function UserManager({
   const isEmployeeForm = role === "EMPLOYEE";
   const isManagerForm = role === "MANAGER";
   const hasSupervisorCombobox = isEmployeeForm || isManagerForm;
-  
+
   const supervisorRole = isEmployeeForm ? "MANAGER" : "ACCOUNTANT";
   const supervisorTitle = isEmployeeForm ? "Manager" : "Accountant";
   const supervisorIdField = isEmployeeForm ? "managerId" : "accountantId";
@@ -55,19 +55,19 @@ export function UserManager({
 
   // If Level 1 is Employee, Level 2 is Manager. Does Level 2 need a supervisor (Accountant)? Yes.
   const nestedNeedsSupervisor = isEmployeeForm; // If Level 1 is Employee, Level 2 is Manager, which needs an Accountant
-  
+
   // Combobox state for Level 2 (Assigning Accountant to the nested Manager)
   const [nestedSupervisorQuery, setNestedSupervisorQuery] = useState("");
   const [isNestedComboboxOpen, setIsNestedComboboxOpen] = useState(false);
   const [selectedNestedSupervisorId, setSelectedNestedSupervisorId] = useState<string>("");
 
   // Filter supervisors for Level 1
-  const filteredSupervisors = availableSupervisors?.filter(s => 
+  const filteredSupervisors = availableSupervisors?.filter(s =>
     `${s.name} ${s.surname}`.toLowerCase().includes(supervisorQuery.toLowerCase())
   ) || [];
 
   // Filter supervisors for Level 2 (Accountants)
-  const filteredNestedSupervisors = availableAccountants?.filter(s => 
+  const filteredNestedSupervisors = availableAccountants?.filter(s =>
     `${s.name} ${s.surname}`.toLowerCase().includes(nestedSupervisorQuery.toLowerCase())
   ) || [];
 
@@ -82,16 +82,16 @@ export function UserManager({
   const handleMainSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
-    
+
     // Validate assignment
     if (hasSupervisorCombobox && !selectedSupervisorId) {
       setError(`Please assign a${isEmployeeForm ? ' ' : 'n '}${supervisorTitle.toLowerCase()}.`);
       return;
     }
-    
+
     // Add supervisorId if it's selected
     if (hasSupervisorCombobox && selectedSupervisorId) {
       formData.set(supervisorIdField, selectedSupervisorId);
@@ -113,7 +113,7 @@ export function UserManager({
   const handleNestedSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setNestedError(null);
-    
+
     if (!nestedFormRef.current) return;
     const formData = new FormData(nestedFormRef.current);
     formData.set("role", supervisorRole);
@@ -137,7 +137,7 @@ export function UserManager({
         const newName = formData.get("name") as string;
         const newSurname = formData.get("surname") as string;
         setSupervisorQuery(`${newName} ${newSurname}`);
-        
+
         setIsNestedModalOpen(false);
         setNestedSupervisorQuery("");
         setSelectedNestedSupervisorId("");
@@ -149,7 +149,7 @@ export function UserManager({
   const handleDeepNestedSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setDeepNestedError(null);
-    
+
     if (!deepNestedFormRef.current) return;
     const formData = new FormData(deepNestedFormRef.current);
     formData.set("role", "ACCOUNTANT");
@@ -164,7 +164,7 @@ export function UserManager({
         const newName = formData.get("name") as string;
         const newSurname = formData.get("surname") as string;
         setNestedSupervisorQuery(`${newName} ${newSurname}`);
-        
+
         setIsDeepNestedModalOpen(false);
         deepNestedFormRef.current?.reset();
       }
@@ -172,8 +172,8 @@ export function UserManager({
   };
 
   // Names for display in comboboxes
-  const displaySupervisorName = availableSupervisors?.find(s => s.id === selectedSupervisorId) 
-    ? `${availableSupervisors.find(s => s.id === selectedSupervisorId)?.name} ${availableSupervisors.find(s => s.id === selectedSupervisorId)?.surname}` 
+  const displaySupervisorName = availableSupervisors?.find(s => s.id === selectedSupervisorId)
+    ? `${availableSupervisors.find(s => s.id === selectedSupervisorId)?.name} ${availableSupervisors.find(s => s.id === selectedSupervisorId)?.surname}`
     : "";
 
   const displayNestedSupervisorName = availableAccountants?.find(s => s.id === selectedNestedSupervisorId)
@@ -266,7 +266,7 @@ export function UserManager({
 
             <form ref={formRef} onSubmit={handleMainSubmit} className="p-6 space-y-4">
               <input type="hidden" name="role" value={role} />
-              
+
               {error && (
                 <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 text-center animate-pulse">
                   {error}
@@ -331,7 +331,7 @@ export function UserManager({
               {hasSupervisorCombobox && availableSupervisors && (
                 <div className="space-y-1.5 relative">
                   <label className="text-xs font-semibold text-gray-700 ml-1">Assign {supervisorTitle}</label>
-                  
+
                   <div className="relative">
                     <input
                       type="text"
@@ -347,12 +347,12 @@ export function UserManager({
                       onFocus={() => setIsComboboxOpen(true)}
                       onBlur={() => setTimeout(() => setIsComboboxOpen(false), 200)}
                     />
-                    
+
                     {isComboboxOpen && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                         <ul className="py-1">
                           {filteredSupervisors.map(s => (
-                            <li 
+                            <li
                               key={s.id}
                               onClick={() => {
                                 setSelectedSupervisorId(s.id);
@@ -364,9 +364,9 @@ export function UserManager({
                               {s.name} {s.surname} <span className="text-gray-400 text-xs ml-1">({s.email})</span>
                             </li>
                           ))}
-                          
+
                           {supervisorQuery.trim().length > 0 && !filteredSupervisors.find(s => `${s.name} ${s.surname}`.toLowerCase() === supervisorQuery.toLowerCase()) && (
-                            <li 
+                            <li
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setIsComboboxOpen(false);
@@ -498,7 +498,7 @@ export function UserManager({
               {nestedNeedsSupervisor && availableAccountants && (
                 <div className="space-y-1.5 relative">
                   <label className="text-xs font-semibold text-gray-700 ml-1">Assign Accountant</label>
-                  
+
                   <div className="relative">
                     <input
                       type="text"
@@ -514,12 +514,12 @@ export function UserManager({
                       onFocus={() => setIsNestedComboboxOpen(true)}
                       onBlur={() => setTimeout(() => setIsNestedComboboxOpen(false), 200)}
                     />
-                    
+
                     {isNestedComboboxOpen && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                         <ul className="py-1">
                           {filteredNestedSupervisors.map(s => (
-                            <li 
+                            <li
                               key={s.id}
                               onClick={() => {
                                 setSelectedNestedSupervisorId(s.id);
@@ -531,9 +531,9 @@ export function UserManager({
                               {s.name} {s.surname} <span className="text-gray-400 text-xs ml-1">({s.email})</span>
                             </li>
                           ))}
-                          
+
                           {nestedSupervisorQuery.trim().length > 0 && !filteredNestedSupervisors.find(s => `${s.name} ${s.surname}`.toLowerCase() === nestedSupervisorQuery.toLowerCase()) && (
-                            <li 
+                            <li
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setIsNestedComboboxOpen(false);

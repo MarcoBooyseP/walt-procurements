@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# mem docs data (vector DB and hashes)
+.mem/docs/data/
+
+# mem temp artifacts (onboard output)
+.mem/tmp/
