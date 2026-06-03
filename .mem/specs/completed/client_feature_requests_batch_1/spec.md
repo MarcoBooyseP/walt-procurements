@@ -1,14 +1,14 @@
 ---
 title: Client Feature Requests Batch 1
-status: merge_ready
+status: completed
 assigned_to: MarcoBooyseP
 issue_id: 1
 issue_url: https://github.com/MarcoBooyseP/walt-procurements/issues/1
 branch: dev-marcobooysep-client_feature_requests_batch_1
 pr_url: https://github.com/MarcoBooyseP/walt-procurements/pull/2
 created_at: '2026-06-03T08:16:27.617162'
-updated_at: '2026-06-03T12:30:23.716381'
-completed_at: null
+updated_at: '2026-06-03T12:32:06.074650'
+completed_at: '2026-06-03T12:32:06.072843'
 last_synced_at: '2026-06-03T08:18:22.108516'
 local_content_hash: 6cc0e564a2144a8449a203e5a829a2f17f1bc0c3d168d7de415c7944b4b80bc5
 remote_content_hash: 6cc0e564a2144a8449a203e5a829a2f17f1bc0c3d168d7de415c7944b4b80bc5
