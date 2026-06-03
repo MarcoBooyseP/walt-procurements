@@ -1,11 +1,25 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { addDocumentsToRequest, markOrderPlaced, markReadyForPickup } from "@/actions/request";
+import { addDocumentsToRequest, markOrderPlaced, markReadyForPickup, editRequest, sendToDirectorApproval } from "@/actions/request";
+import { EditOrderModal } from "@/components/edit-order-modal";
+import { addSupplier } from "@/app/admin/supplier-actions";
 
-export function PurchaseOrderTable({ requests }: { requests: any[] }) {
+export function PurchaseOrderTable({
+  requests,
+  locations,
+  categories,
+  suppliers,
+}: { 
+  requests: any[];
+  locations: any[];
+  categories: any[];
+  suppliers: any[];
+}) {
   const [viewingDocsRequest, setViewingDocsRequest] = useState<any | null>(null);
   const [viewingTimelineRequest, setViewingTimelineRequest] = useState<any | null>(null);
+  const [editingRequest, setEditingRequest] = useState<any | null>(null);
+  const [selectingSupplierForRequest, setSelectingSupplierForRequest] = useState<any | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,13 +43,24 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
     setDateFilter("");
   };
 
-  const handleAdvanceStatus = (id: string, currentStatus: string) => {
+  const handleAdvanceStatus = (req: any, customAction?: string) => {
     setOpenMenuId(null);
+    if (req.status === "AWAITING_PLACEMENT" && req.supplier === "Unsure (To be confirmed)" && !customAction) {
+      setSelectingSupplierForRequest(req);
+      return;
+    }
+
     startTransition(async () => {
-      if (currentStatus === "AWAITING_PLACEMENT") {
-        await markOrderPlaced(id);
-      } else if (currentStatus === "ORDER_PLACED") {
-        await markReadyForPickup(id);
+      try {
+        if (customAction === "send_to_director") {
+          await sendToDirectorApproval(req.id);
+        } else if (req.status === "AWAITING_PLACEMENT") {
+          await markOrderPlaced(req.id);
+        } else if (req.status === "ORDER_PLACED") {
+          await markReadyForPickup(req.id);
+        }
+      } catch (error: any) {
+        alert(error.message || "Failed to update status.");
       }
     });
   };
@@ -221,14 +246,15 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
               <th className="px-6 py-4">Location</th>
               <th className="px-6 py-4">Urgency</th>
               <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4">Supplier</th>
               <th className="px-6 py-4">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((req, index) => {
-                // Open upwards if it's one of the last two rows and the table has enough rows
-                const dropUp = index >= filteredRequests.length - 2 && filteredRequests.length > 3;
+                // Open upwards if it's one of the last two rows and not the very first rows
+                const dropUp = index >= filteredRequests.length - 2 && index > 1;
                 
                 return (
                   <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
@@ -274,6 +300,9 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
                        req.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]">
+                    {req.supplier || "—"}
+                  </td>
                   <td className="px-6 py-4 relative">
                     <div className="flex justify-end">
                       <button 
@@ -286,21 +315,35 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
                       </button>
                     </div>
                     {openMenuId === req.id && (
-                      <div className={`absolute right-6 ${dropUp ? 'bottom-10 mb-1' : 'top-10 mt-1'} w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-10`}>
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)}></div>
+                        <div className={`absolute right-6 ${dropUp ? 'bottom-10 mb-1' : 'top-10 mt-1'} w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50`}>
                         {req.status === "AWAITING_PLACEMENT" && (
-                          <button 
-                            disabled={isPendingAction}
-                            onClick={() => handleAdvanceStatus(req.id, req.status)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
-                          >
-                            <svg className="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            Mark Order Placed
-                          </button>
+                          <>
+                            <button 
+                              disabled={isPendingAction}
+                              onClick={() => handleAdvanceStatus(req)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                              Mark Order Placed
+                            </button>
+                            {!req.directorApprovalDate && (
+                              <button 
+                                disabled={isPendingAction}
+                                onClick={() => handleAdvanceStatus(req, "send_to_director")}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                              >
+                                <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                Send to Director for Approval
+                              </button>
+                            )}
+                          </>
                         )}
                         {req.status === "ORDER_PLACED" && (
                           <button 
                             disabled={isPendingAction}
-                            onClick={() => handleAdvanceStatus(req.id, req.status)}
+                            onClick={() => handleAdvanceStatus(req)}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
                           >
                             <svg className="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
@@ -317,6 +360,18 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
                           <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           View Timeline
                         </button>
+                        {req.status !== "COMPLETED" && req.status !== "DENIED" && req.status !== "ORDER_PLACED" && req.status !== "READY_FOR_PICKUP" && (
+                          <button 
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setEditingRequest(req);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                          >
+                            <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            Edit Details
+                          </button>
+                        )}
                         <button 
                           onClick={() => {
                             setOpenMenuId(null);
@@ -328,6 +383,7 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
                           View Documents
                         </button>
                       </div>
+                      </>
                     )}
                   </td>
                 </tr>
@@ -520,6 +576,110 @@ export function PurchaseOrderTable({ requests }: { requests: any[] }) {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {selectingSupplierForRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between rounded-t-[32px]">
+              <h3 className="text-lg font-bold text-gray-900">Select Supplier</h3>
+              <button
+                onClick={() => setSelectingSupplierForRequest(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form action={async (formData) => {
+              const selectedSupplier = formData.get("supplier") as string;
+              const newSupplierName = formData.get("name") as string;
+              
+              let finalSupplier = selectedSupplier;
+              
+              try {
+                if (selectedSupplier === "NEW" && newSupplierName) {
+                  // create new supplier
+                  const res = await addSupplier(formData);
+                  if (res.error) {
+                    alert(res.error);
+                    return;
+                  }
+                  finalSupplier = newSupplierName;
+                } else if (!finalSupplier || finalSupplier === "Unsure (To be confirmed)" || finalSupplier === "NEW") {
+                  alert("Please select or enter a valid supplier.");
+                  return;
+                }
+
+                // update request with finalSupplier
+                await editRequest(selectingSupplierForRequest.id, {
+                  farmLocation: selectingSupplierForRequest.farmLocation,
+                  category: selectingSupplierForRequest.category,
+                  itemDetails: selectingSupplierForRequest.itemDetails,
+                  urgency: selectingSupplierForRequest.urgency,
+                  quantity: selectingSupplierForRequest.quantity,
+                  supplier: finalSupplier
+                });
+
+                // mark as placed
+                await markOrderPlaced(selectingSupplierForRequest.id);
+                setSelectingSupplierForRequest(null);
+              } catch (err: any) {
+                alert(err.message || "Something went wrong.");
+              }
+            }} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-700 ml-1">Supplier</label>
+                <select 
+                  name="supplier" 
+                  defaultValue=""
+                  required
+                  onChange={(e) => {
+                    const newSupplierDiv = document.getElementById("new-supplier-div");
+                    const nameInput = document.getElementById("new-supplier-name-input");
+                    if (newSupplierDiv && nameInput) {
+                      newSupplierDiv.style.display = e.target.value === "NEW" ? "block" : "none";
+                      if (e.target.value === "NEW") {
+                        (nameInput as HTMLInputElement).required = true;
+                        nameInput.focus();
+                      } else {
+                        (nameInput as HTMLInputElement).required = false;
+                      }
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all duration-200 text-gray-900"
+                >
+                  <option value="" disabled>Select a supplier</option>
+                  {suppliers.filter(s => s.name !== "Unsure (To be confirmed)").map(s => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
+                  <option value="NEW">+ Add New Supplier</option>
+                </select>
+              </div>
+
+              <div id="new-supplier-div" className="space-y-1.5 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="text-xs font-semibold text-gray-700 ml-1">New Supplier Name</label>
+                <input
+                  name="name"
+                  id="new-supplier-name-input"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all duration-200 text-gray-900"
+                  placeholder="e.g. AgriCorp"
+                />
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isPendingAction}
+                  className="w-full px-4 py-3 bg-brand-red hover:bg-[#8c1e24] text-white font-medium rounded-xl shadow-lg shadow-brand-red/20 hover:shadow-brand-red/30 transition-all disabled:opacity-70 flex justify-center items-center"
+                >
+                  Confirm & Place Order
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

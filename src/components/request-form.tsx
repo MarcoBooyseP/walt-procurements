@@ -6,6 +6,7 @@ import Link from "next/link";
 
 type Location = { id: string; name: string };
 type Category = { id: string; name: string };
+type Supplier = { id: string; name: string };
 
 export function RequestForm({ 
   userName, 
@@ -13,7 +14,8 @@ export function RequestForm({
   userRole,
   userLocationName,
   locations,
-  categories 
+  categories,
+  suppliers
 }: { 
   userName: string; 
   userId: string; 
@@ -21,6 +23,7 @@ export function RequestForm({
   userLocationName: string;
   locations: Location[];
   categories: Category[];
+  suppliers: Supplier[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [isSuccess, setIsSuccess] = useState(false);
@@ -175,6 +178,31 @@ export function RequestForm({
         {errors.category && <span className="text-brand-red text-sm font-medium animate-in fade-in slide-in-from-top-1">{errors.category}</span>}
       </div>
 
+      {/* Supplier */}
+      <div className="flex flex-col gap-2">
+        <label htmlFor="supplier" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Supplier <span className="text-brand-red">*</span>
+        </label>
+        <div className="relative">
+          <select
+            name="supplier"
+            id="supplier"
+            defaultValue="Unsure (To be confirmed)"
+            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all"
+          >
+            <option value="Unsure (To be confirmed)">Unsure (To be confirmed)</option>
+            {suppliers?.filter(sup => sup.name !== "Unsure (To be confirmed)").map((sup) => (
+              <option key={sup.id} value={sup.name}>
+                {sup.name}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
+
       {/* Item Details */}
       <div className="flex flex-col gap-2">
         <label htmlFor="itemDetails" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
@@ -285,21 +313,44 @@ export function RequestForm({
       </div>
 
       {/* Submit */}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="mt-6 w-full py-5 px-6 bg-brand-red text-white text-[19px] font-bold rounded-xl shadow-lg hover:bg-brand-red/90 active:bg-brand-red/80 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-      >
-        {isPending ? (
-          <span className="flex items-center gap-3">
-            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Submitting Request...
-          </span>
-        ) : "Submit Request"}
-      </button>
+      {userRole === "MANAGER" ? (
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="submit"
+            name="bypassDirector"
+            value="false"
+            disabled={isPending}
+            className="w-full py-5 px-6 bg-brand-red text-white text-[19px] font-bold rounded-xl shadow-lg hover:bg-brand-red/90 active:bg-brand-red/80 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+          >
+            {isPending ? "Submitting..." : "Submit for Director Approval"}
+          </button>
+          <button
+            type="submit"
+            name="bypassDirector"
+            value="true"
+            disabled={isPending}
+            className="w-full py-4 px-6 bg-white border-2 border-brand-red text-brand-red text-[17px] font-bold rounded-xl hover:bg-red-50 active:bg-red-100 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+          >
+            {isPending ? "Submitting..." : "Submit and Bypass Director"}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="submit"
+          disabled={isPending}
+          className="mt-6 w-full py-5 px-6 bg-brand-red text-white text-[19px] font-bold rounded-xl shadow-lg hover:bg-brand-red/90 active:bg-brand-red/80 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+        >
+          {isPending ? (
+            <span className="flex items-center gap-3">
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting Request...
+            </span>
+          ) : "Submit Request"}
+        </button>
+      )}
 
       {userRole !== "MANAGER" && userRole !== "DIRECTOR" && (
         <Link 

@@ -6,14 +6,14 @@ import { requests } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sql } from "drizzle-orm";
 import { resend } from "@/lib/resend";
-import { ManagerNotificationEmail } from "@/emails/manager-notification";
-import { DirectorNotificationEmail } from "@/emails/director-notification";
+import { ApprovalNeededEmail } from "@/emails/approval-needed-email";
+import { ReadyForPickupEmail } from "@/emails/ready-for-pickup-email";
 
 import { render } from '@react-email/render';
 
 import { uploadToS3 } from "@/lib/s3";
 
-const ENABLE_EMAILS = false;
+const ENABLE_EMAILS = true;
 
 export async function submitRequest(formData: FormData) {
   const requestedBy = formData.get("requestedBy") as string;
@@ -24,6 +24,7 @@ export async function submitRequest(formData: FormData) {
   const itemDetails = formData.get("itemDetails") as string;
   const urgency = formData.get("urgency") as string;
   const quantity = formData.get("quantity") as string;
+  const supplier = formData.get("supplier") as string;
   const photoFiles = formData.getAll("photoAttachment") as File[];
 
   if (!requestedBy || !farmLocation || !category || !itemDetails || !urgency) {
@@ -40,9 +41,19 @@ export async function submitRequest(formData: FormData) {
 
   // Managers and Admins skip manager approval — their requests go straight to PENDING_DIRECTOR
   // Directors skip both manager and director approval — their requests go straight to AWAITING_PLACEMENT
-  const isElevatedRole = submittedByRole === "MANAGER" || submittedByRole === "ADMIN";
+  const bypassDirector = formData.get("bypassDirector") === "true";
+  const isManager = submittedByRole === "MANAGER";
+  const isElevatedRole = isManager || submittedByRole === "ADMIN";
   const isDirector = submittedByRole === "DIRECTOR";
-  const initialStatus = isDirector ? "AWAITING_PLACEMENT" : isElevatedRole ? "PENDING_DIRECTOR" : "PENDING";
+  
+  let initialStatus = "PENDING";
+  if (isDirector) {
+    initialStatus = "AWAITING_PLACEMENT";
+  } else if (isManager && bypassDirector) {
+    initialStatus = "AWAITING_PLACEMENT";
+  } else if (isElevatedRole) {
+    initialStatus = "PENDING_DIRECTOR";
+  }
 
   const [newRequest] = await db.insert(requests).values({
     requestedBy,
@@ -52,20 +63,19 @@ export async function submitRequest(formData: FormData) {
     itemDetails,
     urgency,
     quantity: quantity || "1",
+    supplier: supplier || null,
     fileUrls,
     status: initialStatus,
   }).returning();
 
   if (ENABLE_EMAILS && resend && process.env.RESEND_FROM_EMAIL) {
     try {
-      if (isDirector) {
-        // Skip all approvals, it's ready for placement
-        // You could send a notification to the admin that a director submitted an order
-        console.log(`[RESEND] Director auto-approved their own Request: ${newRequest.id}`);
+      if (isDirector || (isManager && bypassDirector)) {
+        console.log(`[RESEND] Request skipped approvals: ${newRequest.id}`);
       } else if (isElevatedRole) {
-        // Skip manager approval, send straight to director
+        // Needs Director Approval
         const emailHtml = await render(
-          <DirectorNotificationEmail
+          <ApprovalNeededEmail
             id={newRequest.id}
             requestedBy={requestedBy}
             farmLocation={farmLocation}
@@ -73,20 +83,21 @@ export async function submitRequest(formData: FormData) {
             itemDetails={itemDetails}
             urgency={urgency}
             fileUrls={newRequest.fileUrls || []}
+            reviewerRole="DIRECTOR"
           />
         );
 
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
           to: ["marco@middelman.co.za"],
-          subject: `[${urgency}] Final Approval Needed: Supply Request from ${requestedBy}`,
+          subject: `[${urgency}] Director Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
-        console.log(`[RESEND] Dispatched director notification for auto-advanced Request: ${newRequest.id}`);
+        console.log(`[RESEND] Dispatched Director approval notification for Request: ${newRequest.id}`);
       } else {
-        // EMPLOYEE: notify manager for approval
+        // Needs Manager Approval
         const emailHtml = await render(
-          <ManagerNotificationEmail
+          <ApprovalNeededEmail
             id={newRequest.id}
             requestedBy={requestedBy}
             farmLocation={farmLocation}
@@ -94,16 +105,17 @@ export async function submitRequest(formData: FormData) {
             itemDetails={itemDetails}
             urgency={urgency}
             fileUrls={newRequest.fileUrls || []}
+            reviewerRole="MANAGER"
           />
         );
 
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
           to: ["marco@middelman.co.za"],
-          subject: `[${urgency}] New Supply Request from ${requestedBy}`,
+          subject: `[${urgency}] Manager Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
-        console.log(`[RESEND] Dispatched manager notification for Request: ${newRequest.id}`);
+        console.log(`[RESEND] Dispatched Manager approval notification for Request: ${newRequest.id}`);
       }
     } catch (error) {
       console.error("[RESEND] Failed to send email", error);
@@ -115,10 +127,22 @@ export async function submitRequest(formData: FormData) {
   return { success: true, requestId: newRequest.id };
 }
 
-import { DenialNotificationEmail } from "@/emails/denial-notification";
-import { ApprovalNotificationEmail } from "@/emails/approval-notification";
-
 export async function approveRequest(id: string, comment?: string) {
+  const [updatedRequest] = await db.update(requests)
+    .set({ 
+      status: "AWAITING_PLACEMENT",
+      managerComment: comment || null,
+      managerApprovalDate: new Date()
+    })
+    .where(sql`id = ${id}`)
+    .returning();
+
+  revalidatePath(`/manager/review/${id}`);
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function referToDirector(id: string, comment?: string) {
   const [updatedRequest] = await db.update(requests)
     .set({ 
       status: "PENDING_DIRECTOR",
@@ -130,9 +154,9 @@ export async function approveRequest(id: string, comment?: string) {
   
   if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
     try {
-      // 1. Notify Director that Manager has approved
+      // 1. Notify Director that Manager has referred it
       const emailHtml = await render(
-        <DirectorNotificationEmail
+        <ApprovalNeededEmail
           id={updatedRequest.id}
           requestedBy={updatedRequest.requestedBy}
           farmLocation={updatedRequest.farmLocation}
@@ -140,18 +164,18 @@ export async function approveRequest(id: string, comment?: string) {
           itemDetails={updatedRequest.itemDetails}
           urgency={updatedRequest.urgency}
           fileUrls={updatedRequest.fileUrls || []}
-          managerComment={updatedRequest.managerComment}
+          reviewerRole="DIRECTOR"
         />
       );
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
         to: ["marco@middelman.co.za"],
-        subject: `[${updatedRequest.urgency}] Final Approval Needed: Supply Request from ${updatedRequest.requestedBy}`,
+        subject: `[${updatedRequest.urgency}] Director Approval Needed: Supply Request from ${updatedRequest.requestedBy}`,
         html: emailHtml,
       });
 
-      console.log(`[RESEND] Dispatched director notification for Request: ${id}`);
+      console.log(`[RESEND] Dispatched Director approval notification for Request: ${id}`);
     } catch (error) {
       console.error("[RESEND] Failed to send director notification", error);
     }
@@ -171,28 +195,6 @@ export async function denyRequest(id: string, comment?: string) {
     .where(sql`id = ${id}`)
     .returning();
   
-  if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
-    try {
-      const emailHtml = await render(
-        <DenialNotificationEmail
-          requestedBy={updatedRequest.requestedBy}
-          category={updatedRequest.category}
-          itemDetails={updatedRequest.itemDetails}
-          managerComment={updatedRequest.managerComment}
-        />
-      );
-
-      await resend.emails.send({
-        from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"],
-        subject: `Request Denied: ${updatedRequest.category} request`,
-        html: emailHtml,
-      });
-    } catch (error) {
-      console.error("[RESEND] Failed to send denial email", error);
-    }
-  }
-
   revalidatePath(`/manager/review/${id}`);
   revalidatePath("/");
   return { success: true };
@@ -207,31 +209,6 @@ export async function directorApproveRequest(id: string, comment?: string) {
     })
     .where(sql`id = ${id}`)
     .returning();
-  
-  if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
-    try {
-      // 1. Notify Requester
-      const requesterEmailHtml = await render(
-        <ApprovalNotificationEmail
-          requestedBy={updatedRequest.requestedBy}
-          category={updatedRequest.category}
-          itemDetails={updatedRequest.itemDetails}
-          managerComment={updatedRequest.directorComment} // using director's comment in approval email
-        />
-      );
-
-      await resend.emails.send({
-        from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"],
-        subject: `Request Approved: ${updatedRequest.category} request`,
-        html: requesterEmailHtml,
-      });
-
-      console.log(`[RESEND] Dispatched final approval email for Request: ${id}`);
-    } catch (error) {
-      console.error("[RESEND] Failed to send approval emails", error);
-    }
-  }
 
   revalidatePath(`/director/review/${id}`);
   revalidatePath("/admin");
@@ -247,28 +224,6 @@ export async function directorDenyRequest(id: string, comment?: string) {
     })
     .where(sql`id = ${id}`)
     .returning();
-  
-  if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
-    try {
-      const emailHtml = await render(
-        <DenialNotificationEmail
-          requestedBy={updatedRequest.requestedBy}
-          category={updatedRequest.category}
-          itemDetails={updatedRequest.itemDetails}
-          managerComment={updatedRequest.directorComment} // using director's comment
-        />
-      );
-
-      await resend.emails.send({
-        from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"],
-        subject: `Request Denied: ${updatedRequest.category} request`,
-        html: emailHtml,
-      });
-    } catch (error) {
-      console.error("[RESEND] Failed to send denial email", error);
-    }
-  }
 
   revalidatePath(`/director/review/${id}`);
   revalidatePath("/admin");
@@ -308,9 +263,19 @@ export async function addDocumentsToRequest(requestId: string, formData: FormDat
   return { success: true, newUrls: newFileUrls };
 }
 
-import { ReadyForPickupNotificationEmail } from "@/emails/ready-for-pickup-notification";
+
 
 export async function markOrderPlaced(id: string) {
+  const [existingRequest] = await db.select().from(requests).where(sql`id = ${id}`).limit(1);
+  
+  if (!existingRequest) {
+    throw new Error("Request not found");
+  }
+
+  if (existingRequest.supplier === "Unsure (To be confirmed)") {
+    throw new Error("You must select a confirmed supplier before marking the order as placed.");
+  }
+
   await db.update(requests).set({ status: "ORDER_PLACED", orderPlacedDate: new Date() }).where(sql`id = ${id}`);
   revalidatePath("/admin");
   revalidatePath("/requests");
@@ -326,8 +291,9 @@ export async function markReadyForPickup(id: string) {
   if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
     try {
       const emailHtml = await render(
-        <ReadyForPickupNotificationEmail
+        <ReadyForPickupEmail
           requestedBy={updatedRequest.requestedBy}
+          farmLocation={updatedRequest.farmLocation}
           category={updatedRequest.category}
           itemDetails={updatedRequest.itemDetails}
         />
@@ -352,6 +318,49 @@ export async function markReadyForPickup(id: string) {
 
 export async function markPickedUp(id: string) {
   await db.update(requests).set({ status: "COMPLETED", orderPickedUpDate: new Date() }).where(sql`id = ${id}`);
+  revalidatePath("/admin");
+  revalidatePath("/requests");
+  return { success: true };
+}
+
+export async function editRequest(
+  id: string,
+  data: {
+    farmLocation: string;
+    category: string;
+    itemDetails: string;
+    urgency: string;
+    quantity: string;
+    supplier?: string;
+  }
+) {
+  const [existingRequest] = await db.select().from(requests).where(sql`id = ${id}`);
+  if (!existingRequest) {
+    throw new Error("Request not found");
+  }
+  if (existingRequest.status === "COMPLETED" || existingRequest.status === "DENIED") {
+    throw new Error("Cannot edit a request that is already completed or denied.");
+  }
+
+  await db.update(requests)
+    .set({
+      farmLocation: data.farmLocation,
+      category: data.category,
+      itemDetails: data.itemDetails,
+      urgency: data.urgency,
+      quantity: data.quantity || "1",
+      supplier: data.supplier || null,
+    })
+    .where(sql`id = ${id}`);
+
+  revalidatePath("/admin");
+  revalidatePath("/manager/review/[id]", "page");
+  revalidatePath("/director/review/[id]", "page");
+  return { success: true };
+}
+
+export async function sendToDirectorApproval(id: string) {
+  await db.update(requests).set({ status: "PENDING_DIRECTOR" }).where(sql`id = ${id}`);
   revalidatePath("/admin");
   revalidatePath("/requests");
   return { success: true };
