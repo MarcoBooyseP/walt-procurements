@@ -1,13 +1,13 @@
 ---
 title: Client Feature Requests Batch 1
 status: todo
-assigned_to: null
+assigned_to: MarcoBooyseP
 issue_id: 1
 issue_url: https://github.com/MarcoBooyseP/walt-procurements/issues/1
-branch: null
+branch: dev-marcobooysep-client_feature_requests_batch_1
 pr_url: null
 created_at: '2026-06-03T08:16:27.617162'
-updated_at: '2026-06-03T08:18:22.109514'
+updated_at: '2026-06-03T08:18:31.653967'
 completed_at: null
 last_synced_at: '2026-06-03T08:18:22.108516'
 local_content_hash: 6cc0e564a2144a8449a203e5a829a2f17f1bc0c3d168d7de415c7944b4b80bc5
