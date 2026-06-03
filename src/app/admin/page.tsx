@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users, locations, categories, requests } from "@/db/schema";
+import { users, locations, categories, requests, suppliers } from "@/db/schema";
 import { inArray, desc, eq } from "drizzle-orm";
 import { AdminClient } from "./admin-client";
 
@@ -59,6 +59,11 @@ export default async function AdminPage() {
     .from(requests)
     .orderBy(desc(requests.createdAt));
 
+  const suppliersData = await db
+    .select({ id: suppliers.id, name: suppliers.name })
+    .from(suppliers)
+    .orderBy(desc(suppliers.createdAt));
+
   return (
     <AdminClient
       employeesData={employeesData}
@@ -68,6 +73,7 @@ export default async function AdminPage() {
       locationsData={locationsData}
       categoriesData={categoriesData}
       requestsData={requestsData}
+      suppliersData={suppliersData}
     />
   );
 }

@@ -1,11 +1,12 @@
 import { RequestForm } from "@/components/request-form";
 import { ManagerDashboard } from "@/components/manager-dashboard";
 import { DirectorDashboard } from "@/components/director-dashboard";
+import { EmployeeDashboard } from "@/components/employee-dashboard";
 import { SignOutButton } from "@/components/sign-out-button";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { db } from "@/db";
-import { users, locations, categories, requests } from "@/db/schema";
+import { users, locations, categories, requests, suppliers } from "@/db/schema";
 import { eq, asc, desc, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -34,10 +35,26 @@ export default async function HomePage() {
     .from(categories)
     .orderBy(asc(categories.name));
 
+  const suppliersList = await db
+    .select({ id: suppliers.id, name: suppliers.name })
+    .from(suppliers)
+    .orderBy(asc(suppliers.name));
+
   const userLocationName = locationsList.find(l => l.id === dbUser?.locationId)?.name || "";
 
   let pendingRequests: any[] = [];
-  if (dbUser?.role === "MANAGER") {
+  if (dbUser?.role === "EMPLOYEE") {
+    pendingRequests = await db
+      .select()
+      .from(requests)
+      .where(
+        and(
+          eq(requests.status, "READY_FOR_PICKUP"),
+          eq(requests.submittedByUserId, dbUser.id)
+        )
+      )
+      .orderBy(desc(requests.createdAt));
+  } else if (dbUser?.role === "MANAGER") {
     pendingRequests = await db
       .select({
         id: requests.id,
@@ -68,9 +85,25 @@ export default async function HomePage() {
       .orderBy(desc(requests.createdAt));
   }
 
+  let myReadyRequests: any[] = [];
+  if (dbUser?.id && (dbUser.role === "MANAGER" || dbUser.role === "DIRECTOR")) {
+    myReadyRequests = await db
+      .select()
+      .from(requests)
+      .where(
+        and(
+          eq(requests.status, "READY_FOR_PICKUP"),
+          eq(requests.submittedByUserId, dbUser.id)
+        )
+      )
+      .orderBy(desc(requests.createdAt));
+  }
+
+  const containerMaxWidth = "max-w-lg";
+
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col items-center pb-10">
-      <div className="w-full max-w-lg mx-auto bg-white min-h-screen shadow-2xl sm:min-h-0 sm:mt-10 sm:rounded-[32px] sm:overflow-hidden flex flex-col relative">
+      <div className={`w-full ${containerMaxWidth} mx-auto bg-white min-h-screen shadow-2xl sm:min-h-0 sm:mt-10 sm:rounded-[32px] sm:overflow-hidden flex flex-col relative`}>
         
         {/* Header */}
         <header className="bg-brand-red text-white px-6 py-8 sm:px-8 text-center rounded-b-3xl sm:rounded-none sm:rounded-t-[32px] shadow-md z-10 relative">
@@ -85,13 +118,15 @@ export default async function HomePage() {
         {/* Form Container */}
         <div className="flex-1 px-5 py-8 sm:p-8 bg-gray-50/50 flex flex-col">
           {dbUser?.role === "EMPLOYEE" ? (
-            <RequestForm 
+            <EmployeeDashboard 
+              requests={pendingRequests}
               userName={dbUser ? `${dbUser.name} ${dbUser.surname}` : ""}
               userId={dbUser?.id ?? ""}
               userRole={dbUser?.role ?? "USER"}
               userLocationName={userLocationName}
               locations={locationsList}
               categories={categoriesList}
+              suppliers={suppliersList}
             />
           ) : dbUser?.role === "MANAGER" ? (
             <ManagerDashboard 
@@ -102,6 +137,8 @@ export default async function HomePage() {
               userLocationName={userLocationName}
               locations={locationsList}
               categories={categoriesList}
+              suppliers={suppliersList}
+              myReadyRequests={myReadyRequests}
             />
           ) : dbUser?.role === "DIRECTOR" ? (
             <DirectorDashboard 
@@ -112,6 +149,8 @@ export default async function HomePage() {
               userLocationName={userLocationName}
               locations={locationsList}
               categories={categoriesList}
+              suppliers={suppliersList}
+              myReadyRequests={myReadyRequests}
             />
           ) : (
             <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">

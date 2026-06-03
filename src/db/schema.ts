@@ -9,6 +9,7 @@ export const requests = pgTable("requests", {
   itemDetails: text("itemDetails").notNull(),
   urgency: text("urgency").default("Low").notNull(),
   quantity: text("quantity").default("1"),
+  supplier: text("supplier"),
   fileUrls: jsonb("fileUrls").$type<string[]>(),
   managerComment: text("managerComment"),
   directorComment: text("directorComment"),
@@ -41,6 +42,12 @@ export const locations = pgTable("locations", {
 });
 
 export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const suppliers = pgTable("suppliers", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

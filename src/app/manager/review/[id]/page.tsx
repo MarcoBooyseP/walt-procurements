@@ -1,9 +1,10 @@
 import { db } from "@/db";
-import { requests } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { requests, locations, categories, suppliers } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { approveRequest, denyRequest } from "@/actions/request";
+import { approveRequest, denyRequest, referToDirector } from "@/actions/request";
+import { EditOrderButton } from "@/components/edit-order-button";
 import Link from "next/link";
 
 export default async function ManagerReviewPage({
@@ -13,9 +14,14 @@ export default async function ManagerReviewPage({
 }) {
   const { id } = await params;
   
-  const request = await db.query.requests.findFirst({
-    where: eq(requests.id, id),
-  });
+  const [request, locationsData, categoriesData, suppliersData] = await Promise.all([
+    db.query.requests.findFirst({
+      where: eq(requests.id, id),
+    }),
+    db.select().from(locations).orderBy(desc(locations.createdAt)),
+    db.select().from(categories).orderBy(desc(categories.createdAt)),
+    db.select().from(suppliers).orderBy(desc(suppliers.createdAt)),
+  ]);
 
   if (!request) {
     notFound();
@@ -46,9 +52,14 @@ export default async function ManagerReviewPage({
           </Link>
         </div>
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-          <div className="px-6 py-6 border-b border-gray-50 bg-gray-50/50">
-            <h1 className="text-xl font-bold text-brand-gray">Manager Review</h1>
-            <p className="text-sm text-brand-gray/60">ID: {request.id.slice(0, 8)}...</p>
+          <div className="px-6 py-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-start gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-brand-gray">Manager Review</h1>
+              <p className="text-sm text-brand-gray/60">ID: {request.id.slice(0, 8)}...</p>
+            </div>
+            {request.status !== "COMPLETED" && (
+              <EditOrderButton request={request} locations={locationsData} categories={categoriesData} suppliers={suppliersData} />
+            )}
           </div>
 
           <div className="p-6 space-y-6">
@@ -90,6 +101,13 @@ export default async function ManagerReviewPage({
                   "text-brand-gray"
                 }`}>{request.urgency}</p>
               </div>
+
+              {request.supplier && (
+                <div>
+                  <label className="text-xs font-bold text-brand-gray/50 uppercase">Supplier</label>
+                  <p className="text-lg font-semibold text-brand-gray">{request.supplier}</p>
+                </div>
+              )}
 
               <div className="pt-2">
                 <label className="text-xs font-bold text-brand-gray/50 uppercase">Details & Reason</label>
@@ -144,6 +162,8 @@ export default async function ManagerReviewPage({
                   
                   if (action === "approve") {
                     await approveRequest(request.id, comment);
+                  } else if (action === "refer") {
+                    await referToDirector(request.id, comment);
                   } else {
                     await denyRequest(request.id, comment);
                   }
@@ -171,9 +191,21 @@ export default async function ManagerReviewPage({
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Approve Request
+                      Approve Request (Bypass Director)
                     </button>
                     
+                    <button 
+                      type="submit" 
+                      name="action" 
+                      value="refer"
+                      className="w-full py-5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 active:scale-95 transition-all text-lg flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                      Refer to Director
+                    </button>
+
                     <button 
                       type="submit" 
                       name="action" 
