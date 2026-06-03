@@ -7,6 +7,7 @@ import { UserManager } from "./user-manager";
 import { LocationManager } from "./location-manager";
 import { AdminManager } from "./admin-manager";
 import { CategoryManager } from "./category-manager";
+import { SupplierManager } from "./supplier-manager";
 import { PurchaseOrderTable } from "./purchase-order-table";
 import { AnalyticsDashboard } from "./analytics-dashboard";
 
@@ -20,6 +21,7 @@ export function AdminClient({
   locationsData,
   categoriesData,
   requestsData,
+  suppliersData,
 }: {
   employeesData: any[];
   managersData: any[];
@@ -28,6 +30,7 @@ export function AdminClient({
   locationsData: any[];
   categoriesData: any[];
   requestsData: any[];
+  suppliersData: any[];
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -125,7 +128,12 @@ export function AdminClient({
       <main className="flex-1 overflow-y-auto min-h-screen md:h-screen">
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
           {activeTab === "overview" && (
-            <PurchaseOrderTable requests={requestsData} />
+            <PurchaseOrderTable 
+              requests={requestsData} 
+              locations={locationsData}
+              categories={categoriesData}
+              suppliers={suppliersData}
+            />
           )}
 
           {activeTab === "analytics" && (
@@ -164,6 +172,7 @@ export function AdminClient({
               />
               <LocationManager locations={locationsData} />
               <CategoryManager categories={categoriesData} />
+              <SupplierManager suppliers={suppliersData} />
             </div>
           )}
         </div>
