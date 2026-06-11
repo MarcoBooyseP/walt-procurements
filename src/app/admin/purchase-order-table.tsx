@@ -27,12 +27,13 @@ export function PurchaseOrderTable({
   const [urgencyFilter, setUrgencyFilter] = useState("ALL");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [requesterFilter, setRequesterFilter] = useState("ALL");
+  const [supplierFilter, setSupplierFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("");
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "COMPLETED">("ACTIVE");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isPendingAction, startTransition] = useTransition();
 
-  const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL" || urgencyFilter !== "ALL" || locationFilter !== "ALL" || requesterFilter !== "ALL" || dateFilter !== "";
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL" || urgencyFilter !== "ALL" || locationFilter !== "ALL" || requesterFilter !== "ALL" || supplierFilter !== "ALL" || dateFilter !== "";
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -40,6 +41,7 @@ export function PurchaseOrderTable({
     setUrgencyFilter("ALL");
     setLocationFilter("ALL");
     setRequesterFilter("ALL");
+    setSupplierFilter("ALL");
     setDateFilter("");
   };
 
@@ -67,6 +69,7 @@ export function PurchaseOrderTable({
 
   const uniqueLocations = Array.from(new Set(requests.map(r => r.farmLocation))).filter(Boolean).sort();
   const uniqueRequesters = Array.from(new Set(requests.map(r => r.requestedBy))).filter(Boolean).sort();
+  const uniqueSuppliers = Array.from(new Set(requests.map(r => r.supplier))).filter(Boolean).sort();
 
   const filteredRequests = requests.filter((req) => {
     // Search by requestedBy, farmLocation, or Date (but NOT itemDetails)
@@ -94,7 +97,10 @@ export function PurchaseOrderTable({
     // Filter by tab
     const matchesTab = activeTab === "ACTIVE" ? req.status !== "COMPLETED" : req.status === "COMPLETED";
 
-    return matchesSearch && matchesStatus && matchesUrgency && matchesLocation && matchesRequester && matchesDateFilter && matchesTab;
+    // Filter by supplier
+    const matchesSupplier = supplierFilter === "ALL" || req.supplier === supplierFilter;
+
+    return matchesSearch && matchesStatus && matchesUrgency && matchesLocation && matchesRequester && matchesDateFilter && matchesTab && matchesSupplier;
   });
 
   // Calculate counts for active stages
@@ -183,6 +189,16 @@ export function PurchaseOrderTable({
             <option value="ALL">All Locations</option>
             {uniqueLocations.map((loc: any) => (
               <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+          <select
+            className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white max-w-[150px]"
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
+          >
+            <option value="ALL">All Suppliers</option>
+            {uniqueSuppliers.map((supp: any) => (
+              <option key={supp} value={supp}>{supp}</option>
             ))}
           </select>
           {activeTab === "ACTIVE" && (
