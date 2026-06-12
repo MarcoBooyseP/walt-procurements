@@ -50,3 +50,9 @@ next-env.d.ts
 .mem/docs/data
 .claude
 .claude/
+
+.agent_core/tmp/
+
+# Agent Core worktree symlinks
+.agent_core/docs/data
+.agent_core/docs/data/
