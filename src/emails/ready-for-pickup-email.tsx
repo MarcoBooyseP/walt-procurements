@@ -5,6 +5,7 @@ interface ReadyForPickupEmailProps {
   farmLocation: string;
   category: string;
   itemDetails: string;
+  fallbackNotice?: string;
 }
 
 export const ReadyForPickupEmail: React.FC<Readonly<ReadyForPickupEmailProps>> = ({
@@ -12,6 +13,7 @@ export const ReadyForPickupEmail: React.FC<Readonly<ReadyForPickupEmailProps>> =
   farmLocation,
   category,
   itemDetails,
+  fallbackNotice,
 }) => {
   const homeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/home`;
 
@@ -21,6 +23,11 @@ export const ReadyForPickupEmail: React.FC<Readonly<ReadyForPickupEmailProps>> =
         <img src="https://walt-procurements.s3.af-south-1.amazonaws.com/cropped-Walt-Landgoed-Favicon.png" alt="Walt Landgoed Logo" style={{ height: '60px', width: 'auto' }} />
       </div>
       <h1 style={{ color: '#10b981', marginTop: 0, fontSize: '24px', borderBottom: '2px solid #f3f4f6', paddingBottom: '16px' }}>Your Order is Ready for Pickup!</h1>
+      {fallbackNotice && (
+        <div style={{ backgroundColor: '#fffbeb', color: '#b45309', padding: '12px', borderRadius: '6px', marginBottom: '20px', fontSize: '14px', border: '1px solid #fde68a' }}>
+          <strong>Note:</strong> {fallbackNotice}
+        </div>
+      )}
       <p style={{ color: '#505050', fontSize: '16px', lineHeight: '1.5' }}>
         Hi <strong>{requestedBy}</strong>,
       </p>

@@ -2,9 +2,9 @@
 import * as React from 'react';
 
 import { db } from "@/db";
-import { requests } from "@/db/schema";
+import { requests, users } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { resend } from "@/lib/resend";
 import { ApprovalNeededEmail } from "@/emails/approval-needed-email";
 import { ReadyForPickupEmail } from "@/emails/ready-for-pickup-email";
@@ -74,6 +74,14 @@ export async function submitRequest(formData: FormData) {
         console.log(`[RESEND] Request skipped approvals: ${newRequest.id}`);
       } else if (isElevatedRole) {
         // Needs Director Approval
+        let targetEmails: string[] = ["hannes@waltlandgoed.com"];
+        let isFallback = true;
+        const directors = await db.select().from(users).where(eq(users.role, "DIRECTOR"));
+        if (directors.length > 0) {
+          targetEmails = directors.map(d => d.email);
+          isFallback = false;
+        }
+
         const emailHtml = await render(
           <ApprovalNeededEmail
             id={newRequest.id}
@@ -84,18 +92,33 @@ export async function submitRequest(formData: FormData) {
             urgency={urgency}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="DIRECTOR"
+            fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
           />
         );
 
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-          to: ["marco@middelman.co.za"],
+          to: targetEmails,
+          bcc: "marco@middelman.co.za",
           subject: `[${urgency}] Director Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
         console.log(`[RESEND] Dispatched Director approval notification for Request: ${newRequest.id}`);
       } else {
         // Needs Manager Approval
+        let targetEmails: string[] = ["hannes@waltlandgoed.com"];
+        let isFallback = true;
+        if (submittedByUserId) {
+          const [submittingUser] = await db.select().from(users).where(eq(users.id, submittedByUserId));
+          if (submittingUser?.managerId) {
+            const [manager] = await db.select().from(users).where(eq(users.id, submittingUser.managerId));
+            if (manager?.email) {
+              targetEmails = [manager.email];
+              isFallback = false;
+            }
+          }
+        }
+
         const emailHtml = await render(
           <ApprovalNeededEmail
             id={newRequest.id}
@@ -106,12 +129,14 @@ export async function submitRequest(formData: FormData) {
             urgency={urgency}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="MANAGER"
+            fallbackNotice={isFallback ? "This email was sent to you because the Manager's email address was not available." : undefined}
           />
         );
 
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-          to: ["marco@middelman.co.za"],
+          to: targetEmails,
+          bcc: "marco@middelman.co.za",
           subject: `[${urgency}] Manager Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
@@ -155,6 +180,14 @@ export async function referToDirector(id: string, comment?: string) {
   if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
     try {
       // 1. Notify Director that Manager has referred it
+      let targetEmails: string[] = ["hannes@waltlandgoed.com"];
+      let isFallback = true;
+      const directors = await db.select().from(users).where(eq(users.role, "DIRECTOR"));
+      if (directors.length > 0) {
+        targetEmails = directors.map(d => d.email);
+        isFallback = false;
+      }
+
       const emailHtml = await render(
         <ApprovalNeededEmail
           id={updatedRequest.id}
@@ -165,12 +198,14 @@ export async function referToDirector(id: string, comment?: string) {
           urgency={updatedRequest.urgency}
           fileUrls={updatedRequest.fileUrls || []}
           reviewerRole="DIRECTOR"
+          fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
         />
       );
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"],
+        to: targetEmails,
+        bcc: "marco@middelman.co.za",
         subject: `[${updatedRequest.urgency}] Director Approval Needed: Supply Request from ${updatedRequest.requestedBy}`,
         html: emailHtml,
       });
@@ -290,18 +325,30 @@ export async function markReadyForPickup(id: string) {
   
   if (ENABLE_EMAILS && updatedRequest && resend && process.env.RESEND_FROM_EMAIL) {
     try {
+      let targetEmails: string[] = ["hannes@waltlandgoed.com"];
+      let isFallback = true;
+      if (updatedRequest.submittedByUserId) {
+        const [submittingUser] = await db.select().from(users).where(eq(users.id, updatedRequest.submittedByUserId));
+        if (submittingUser?.email) {
+          targetEmails = [submittingUser.email];
+          isFallback = false;
+        }
+      }
+
       const emailHtml = await render(
         <ReadyForPickupEmail
           requestedBy={updatedRequest.requestedBy}
           farmLocation={updatedRequest.farmLocation}
           category={updatedRequest.category}
           itemDetails={updatedRequest.itemDetails}
+          fallbackNotice={isFallback ? "This email was sent to you because the employee's email address was not available." : undefined}
         />
       );
 
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
-        to: ["marco@middelman.co.za"],
+        to: targetEmails,
+        bcc: "marco@middelman.co.za",
         subject: `Ready for Pickup: ${updatedRequest.category} request`,
         html: emailHtml,
       });
