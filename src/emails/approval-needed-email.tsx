@@ -9,6 +9,7 @@ interface ApprovalNeededEmailProps {
   urgency: string;
   fileUrls: string[];
   reviewerRole: 'MANAGER' | 'DIRECTOR';
+  fallbackNotice?: string;
 }
 
 export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> = ({
@@ -20,6 +21,7 @@ export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> =
   urgency,
   fileUrls,
   reviewerRole,
+  fallbackNotice,
 }) => {
   const reviewPath = reviewerRole === 'MANAGER' ? `/manager/review/${id}` : `/director/review/${id}`;
   const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${reviewPath}`;
@@ -30,6 +32,11 @@ export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> =
         <img src="https://walt-procurements.s3.af-south-1.amazonaws.com/cropped-Walt-Landgoed-Favicon.png" alt="Walt Landgoed Logo" style={{ height: '60px', width: 'auto' }} />
       </div>
       <h1 style={{ color: '#aa272f', marginTop: 0, fontSize: '24px', borderBottom: '2px solid #f3f4f6', paddingBottom: '16px' }}>Action Required: Approval Needed</h1>
+      {fallbackNotice && (
+        <div style={{ backgroundColor: '#fffbeb', color: '#b45309', padding: '12px', borderRadius: '6px', marginBottom: '20px', fontSize: '14px', border: '1px solid #fde68a' }}>
+          <strong>Note:</strong> {fallbackNotice}
+        </div>
+      )}
       <p style={{ color: '#505050', fontSize: '16px', lineHeight: '1.5' }}>
         <strong>{requestedBy}</strong> has submitted a supply request for <strong>{farmLocation}</strong> that requires your review as a {reviewerRole === 'MANAGER' ? 'Manager' : 'Director'}.
       </p>
