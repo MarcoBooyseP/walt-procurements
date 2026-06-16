@@ -102,11 +102,6 @@ export default async function DirectorReviewPage({
                 }`}>{request.urgency}</p>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-brand-gray/50 uppercase">Quantity</label>
-                <p className="text-lg font-semibold text-brand-gray">{request.quantity || "—"}</p>
-              </div>
-
               {request.supplier && (
                 <div>
                   <label className="text-xs font-bold text-brand-gray/50 uppercase">Supplier</label>
@@ -119,6 +114,11 @@ export default async function DirectorReviewPage({
                 <div className="mt-1 p-4 bg-gray-50 rounded-xl text-brand-gray border border-gray-100 leading-relaxed">
                   {request.itemDetails}
                 </div>
+              </div>
+
+              <div className="pt-2">
+                <label className="text-xs font-bold text-brand-gray/50 uppercase">Quantity</label>
+                <p className="text-lg font-semibold text-brand-gray">{request.quantity || "—"}</p>
               </div>
 
               {request.managerComment && (

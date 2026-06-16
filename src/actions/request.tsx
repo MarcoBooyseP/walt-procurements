@@ -90,6 +90,7 @@ export async function submitRequest(formData: FormData) {
             category={category}
             itemDetails={itemDetails}
             urgency={urgency}
+            quantity={newRequest.quantity}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="DIRECTOR"
             fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
@@ -127,6 +128,7 @@ export async function submitRequest(formData: FormData) {
             category={category}
             itemDetails={itemDetails}
             urgency={urgency}
+            quantity={newRequest.quantity}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="MANAGER"
             fallbackNotice={isFallback ? "This email was sent to you because the Manager's email address was not available." : undefined}
@@ -196,6 +198,7 @@ export async function referToDirector(id: string, comment?: string) {
           category={updatedRequest.category}
           itemDetails={updatedRequest.itemDetails}
           urgency={updatedRequest.urgency}
+          quantity={updatedRequest.quantity}
           fileUrls={updatedRequest.fileUrls || []}
           reviewerRole="DIRECTOR"
           fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
@@ -341,6 +344,7 @@ export async function markReadyForPickup(id: string) {
           farmLocation={updatedRequest.farmLocation}
           category={updatedRequest.category}
           itemDetails={updatedRequest.itemDetails}
+          quantity={updatedRequest.quantity}
           fallbackNotice={isFallback ? "This email was sent to you because the employee's email address was not available." : undefined}
         />
       );
