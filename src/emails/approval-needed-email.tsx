@@ -7,7 +7,7 @@ interface ApprovalNeededEmailProps {
   category: string;
   itemDetails: string;
   urgency: string;
-  quantity: string | number;
+  quantity: string | number | null;
   fileUrls: string[];
   reviewerRole: 'MANAGER' | 'DIRECTOR';
   fallbackNotice?: string;
@@ -56,7 +56,7 @@ export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> =
         </p>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Category:</strong> {category}</p>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px', lineHeight: '1.5' }}><strong style={{ color: '#374151' }}>Details & Reason:</strong><br/>{itemDetails}</p>
-        <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity}</p>
+        <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity || "—"}</p>
 
         {fileUrls && fileUrls.length > 0 && (
           <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
