@@ -102,6 +102,11 @@ export default async function DirectorReviewPage({
                 }`}>{request.urgency}</p>
               </div>
 
+              <div>
+                <label className="text-xs font-bold text-brand-gray/50 uppercase">Quantity</label>
+                <p className="text-lg font-semibold text-brand-gray">{request.quantity || "—"}</p>
+              </div>
+
               {request.supplier && (
                 <div>
                   <label className="text-xs font-bold text-brand-gray/50 uppercase">Supplier</label>

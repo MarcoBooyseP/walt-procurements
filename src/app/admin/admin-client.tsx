@@ -60,7 +60,7 @@ export function AdminClient({
         />
       )}
       {/* Sidebar */}
-      <aside className={`fixed md:sticky top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      <aside className={`fixed md:sticky top-0 left-0 z-40 h-screen w-48 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         <div className="p-6 border-b border-gray-100 hidden md:block">
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Admin Portal</h1>
         </div>

@@ -25,11 +25,11 @@ export function EditOrderModal({
 
   async function action(formData: FormData) {
     const newErrors: Record<string, string> = {};
-    const farmLocation = formData.get("farmLocation") as string;
-    const category = formData.get("category") as string;
+    const farmLocation = (formData.get("farmLocation") as string) || request.farmLocation;
+    const category = (formData.get("category") as string) || request.category;
     const itemDetails = formData.get("itemDetails") as string;
-    const urgency = formData.get("urgency") as string;
-    const quantity = formData.get("quantity") as string;
+    const urgency = (formData.get("urgency") as string) || request.urgency;
+    const quantity = (formData.get("quantity") as string) || request.quantity;
     const supplier = formData.get("supplier") as string;
 
     if (!farmLocation) newErrors.farmLocation = "Please select a location";
@@ -89,7 +89,8 @@ export function EditOrderModal({
                   name="farmLocation"
                   id="farmLocation"
                   defaultValue={request.farmLocation}
-                  className={`w-full px-3 py-2.5 bg-white border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
+                  disabled
+                  className={`w-full px-3 py-2.5 bg-gray-50 border ${errors.farmLocation ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all cursor-not-allowed`}
                 >
                   <option value="" disabled></option>
                   {locations.map((loc) => (
@@ -113,7 +114,8 @@ export function EditOrderModal({
                   name="category"
                   id="category"
                   defaultValue={request.category}
-                  className={`w-full px-3 py-2.5 bg-white border ${errors.category ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all`}
+                  disabled
+                  className={`w-full px-3 py-2.5 bg-gray-50 border ${errors.category ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200'} rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all cursor-not-allowed`}
                 >
                   <option value="" disabled></option>
                   {categories.map((cat) => (
@@ -178,7 +180,8 @@ export function EditOrderModal({
                   id="quantity"
                   defaultValue={request.quantity || "1"}
                   min="1"
-                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all"
+                  disabled
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all cursor-not-allowed"
                 />
               </div>
 
@@ -192,7 +195,8 @@ export function EditOrderModal({
                     name="urgency"
                     id="urgency"
                     defaultValue={request.urgency || "Low"}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all"
+                    disabled
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all cursor-not-allowed"
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>

@@ -1,0 +1,37 @@
+[project]
+name = "walt-procurements"
+description = """
+Add your project description here.
+"""
+
+# Files to include in onboard output
+[[files]]
+path = "README.md"
+description = "Project overview and setup instructions"
+
+# Directories whose tree structure is included in onboard output
+# [[tree_dirs]]
+# path = "src"
+# description = "Source code"
+
+[worktree]
+# Project-root relative paths to symlink from the main checkout into spec worktrees.
+# Every listed path is automatically added to .gitignore and must be safe to keep untracked.
+# Typical examples are .env, .claude, .venv, node_modules, or deps. Use care with manifests and lock files such as pyproject.toml, package.json, or bun.lock; list them only when the project deliberately treats them as local-only.
+symlink_paths = [".agent_core/docs/data", ".claude"]
+
+[branches]
+dev = "dev"
+main = "main"
+test = "test"
+
+[harness]
+update_interval_days = 3
+
+# Commands whose output is included in onboard output
+# [[runnables]]
+# name = "Generated project context"
+# command = "python -m your_tool --print-context"
+# description = "Generated project context"
+# timeout_seconds = 60
+last_updated_at = "2026-06-16T13:04:08Z"
