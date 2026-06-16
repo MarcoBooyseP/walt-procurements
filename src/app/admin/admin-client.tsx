@@ -37,7 +37,7 @@ export function AdminClient({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen">
+      <aside className="w-48 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100">
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Admin Portal</h1>
         </div>
