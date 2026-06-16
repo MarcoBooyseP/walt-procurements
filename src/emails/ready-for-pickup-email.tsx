@@ -5,7 +5,7 @@ interface ReadyForPickupEmailProps {
   farmLocation: string;
   category: string;
   itemDetails: string;
-  quantity: string | number;
+  quantity: string | number | null;
   fallbackNotice?: string;
 }
 
@@ -40,7 +40,7 @@ export const ReadyForPickupEmail: React.FC<Readonly<ReadyForPickupEmailProps>> =
       <div style={{ backgroundColor: '#f9fafb', padding: '20px', borderRadius: '8px', marginBottom: '32px', marginTop: '24px', border: '1px solid #e5e7eb' }}>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Category:</strong> {category}</p>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px', lineHeight: '1.5' }}><strong style={{ color: '#374151' }}>Details:</strong><br/>{itemDetails}</p>
-        <p style={{ margin: '0 0 0 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity}</p>
+        <p style={{ margin: '0 0 0 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity || "—"}</p>
       </div>
 
       <div style={{ textAlign: 'center' }}>
