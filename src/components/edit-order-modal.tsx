@@ -13,12 +13,14 @@ export function EditOrderModal({
   categories,
   suppliers,
   onClose,
+  allowQuantityEdit = false,
 }: {
   request: any;
   locations: Location[];
   categories: Category[];
   suppliers: Supplier[];
   onClose: () => void;
+  allowQuantityEdit?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -180,8 +182,8 @@ export function EditOrderModal({
                   id="quantity"
                   defaultValue={request.quantity || "1"}
                   min="1"
-                  disabled
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all cursor-not-allowed"
+                  disabled={!allowQuantityEdit}
+                  className={`w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all ${allowQuantityEdit ? 'bg-white' : 'bg-gray-50 cursor-not-allowed'}`}
                 />
               </div>
 

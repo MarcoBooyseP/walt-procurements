@@ -38,6 +38,7 @@ export function EditOrderButton({
           categories={categories}
           suppliers={suppliers}
           onClose={() => setIsOpen(false)}
+          allowQuantityEdit={true}
         />
       )}
     </>
