@@ -100,7 +100,6 @@ export async function submitRequest(formData: FormData) {
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
           to: targetEmails,
-          bcc: "marco@middelman.co.za",
           subject: `[${urgency}] Director Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
@@ -138,7 +137,6 @@ export async function submitRequest(formData: FormData) {
         await resend.emails.send({
           from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
           to: targetEmails,
-          bcc: "marco@middelman.co.za",
           subject: `[${urgency}] Manager Approval Needed: Supply Request from ${requestedBy}`,
           html: emailHtml,
         });
@@ -208,7 +206,6 @@ export async function referToDirector(id: string, comment?: string) {
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
         to: targetEmails,
-        bcc: "marco@middelman.co.za",
         subject: `[${updatedRequest.urgency}] Director Approval Needed: Supply Request from ${updatedRequest.requestedBy}`,
         html: emailHtml,
       });
@@ -352,7 +349,6 @@ export async function markReadyForPickup(id: string) {
       await resend.emails.send({
         from: `Walt Landgoed <${process.env.RESEND_FROM_EMAIL}>`,
         to: targetEmails,
-        bcc: "marco@middelman.co.za",
         subject: `Ready for Pickup: ${updatedRequest.category} request`,
         html: emailHtml,
       });
