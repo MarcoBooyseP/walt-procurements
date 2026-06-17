@@ -253,18 +253,18 @@ export function PurchaseOrderTable({
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-gray-100 min-h-[300px]">
-        <table className="w-full text-sm text-left">
+        <table className="w-full text-sm text-left table-fixed min-w-[1200px]">
           <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4">Date</th>
-              <th className="px-6 py-4">Requested By</th>
-              <th className="px-6 py-4 w-64">Item Details</th>
-              <th className="px-6 py-4">Quantity</th>
-              <th className="px-6 py-4">Location</th>
-              <th className="px-6 py-4">Urgency</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Supplier</th>
-              <th className="px-6 py-4">Actions</th>
+              <th className="px-6 py-4 w-[100px]">Date</th>
+              <th className="px-6 py-4 w-[150px]">Requested By</th>
+              <th className="px-6 py-4 w-[280px]">Item Details</th>
+              <th className="px-6 py-4 w-[100px]">Quantity</th>
+              <th className="px-6 py-4 w-[150px]">Location</th>
+              <th className="px-6 py-4 w-[120px]">Urgency</th>
+              <th className="px-6 py-4 w-[220px]">Status</th>
+              <th className="px-6 py-4 w-[160px]">Supplier</th>
+              <th className="px-6 py-4 w-[100px]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
