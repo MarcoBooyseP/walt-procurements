@@ -252,19 +252,19 @@ export function PurchaseOrderTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-gray-100 min-h-[300px]">
-        <table className="w-full text-sm text-left table-fixed min-w-[1200px]">
-          <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+      <div className="overflow-auto rounded-2xl border border-gray-100 min-h-[300px] max-h-[65vh]">
+        <table className="w-full text-sm text-left relative">
+          <thead className="bg-gray-50 text-gray-500 font-medium sticky top-0 z-10 shadow-sm ring-1 ring-gray-100">
             <tr>
-              <th className="px-6 py-4 w-[100px]">Date</th>
-              <th className="px-6 py-4 w-[150px]">Requested By</th>
-              <th className="px-6 py-4 w-[280px]">Item Details</th>
-              <th className="px-6 py-4 w-[100px]">Quantity</th>
-              <th className="px-6 py-4 w-[150px]">Location</th>
-              <th className="px-6 py-4 w-[120px]">Urgency</th>
-              <th className="px-6 py-4 w-[220px]">Status</th>
-              <th className="px-6 py-4 w-[160px]">Supplier</th>
-              <th className="px-6 py-4 w-[100px]">Actions</th>
+              <th className="px-3 py-4 whitespace-nowrap">Date</th>
+              <th className="px-3 py-4 whitespace-nowrap">Requested By</th>
+              <th className="px-3 py-4 w-full">Item Details</th>
+              <th className="px-3 py-4">Quantity</th>
+              <th className="px-3 py-4">Location</th>
+              <th className="px-3 py-4">Urgency</th>
+              <th className="px-3 py-4">Status</th>
+              <th className="px-3 py-4">Supplier</th>
+              <th className="px-3 py-4">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -275,23 +275,23 @@ export function PurchaseOrderTable({
                 
                 return (
                   <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                  <td className="px-3 py-4 text-gray-500 break-words">
                     {new Date(req.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 font-medium text-gray-900">
+                  <td className="px-3 py-4 font-medium text-gray-900 break-words">
                     {req.requestedBy}
                   </td>
-                  <td className="px-6 py-4 text-gray-600 w-64 whitespace-normal break-words">
+                  <td className="px-3 py-4 text-gray-600 whitespace-normal break-words">
                     {req.itemDetails}
                   </td>
-                  <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                  <td className="px-3 py-4 text-gray-600 break-words">
                     {req.quantity || "—"}
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
+                  <td className="px-3 py-4 text-gray-600 break-words">
                     {req.farmLocation}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                  <td className="px-3 py-4 align-middle">
+                    <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-medium text-center ${
                       req.urgency === 'Critical' ? 'bg-red-100 text-red-700' :
                       req.urgency === 'High' ? 'bg-orange-100 text-orange-700' :
                       req.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -300,8 +300,8 @@ export function PurchaseOrderTable({
                       {req.urgency}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                  <td className="px-3 py-4 align-middle">
+                    <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-medium text-center ${
                       req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
                       req.status === 'DENIED' ? 'bg-red-100 text-red-700' :
                       req.status === 'PENDING_DIRECTOR' ? 'bg-blue-100 text-blue-700' :
@@ -320,10 +320,10 @@ export function PurchaseOrderTable({
                        req.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]">
+                  <td className="px-3 py-4 font-medium text-gray-900 whitespace-normal break-words">
                     {req.supplier || "—"}
                   </td>
-                  <td className="px-6 py-4 relative">
+                  <td className="px-3 py-4 relative align-middle">
                     <div className="flex justify-end">
                       <button 
                         onClick={() => setOpenMenuId(openMenuId === req.id ? null : req.id)}
