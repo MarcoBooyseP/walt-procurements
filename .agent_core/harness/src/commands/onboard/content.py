@@ -275,11 +275,11 @@ def _log_entry(record: WorkLog, current_username: str) -> str:
 
 
 def _recent_log_records(active_spec: Spec | None) -> list[WorkLog]:
-    max_displayed = 4
-    new_user_displayed = 3
-    current_user_target = 2
-    current_user_max = 3
-    candidate_pool = 6
+    max_displayed = 6
+    new_user_displayed = 4
+    current_user_target = 3
+    current_user_max = 4
+    candidate_pool = 10
     current_username = logs.current_username()
     spec_slug = active_spec.slug if active_spec is not None else None
     current_records = logs.list_all(
@@ -423,7 +423,7 @@ def _available_specs_section(
         lines.append("")
         if branch == branches.dev:
             lines.append(
-                "Run `python -B .agent_core/harness/main.py merge pr` to merge a PR."
+                "Run `python -B .agent_core/harness/main.py pr review` to select and review a ready pull request."
             )
         else:
             lines.append(
@@ -528,11 +528,12 @@ def _work_logs_section(active_spec: Spec | None) -> list[str]:
     return lines
 
 
-def _open_todos_section(records: list[Todo], branch: str) -> list[str]:
+def _open_todos_section(records: list[Todo], active_spec: Spec | None, branch: str) -> list[str]:
     if not records:
         return []
 
     branches = get_branch_names()
+    can_manage_todos = branch == branches.dev or active_spec is not None
     lines = subsection("📌 OPEN TODOS")
     lines.append("These are standalone work items not tied to any spec.")
     lines.append("")
@@ -545,7 +546,7 @@ def _open_todos_section(records: list[Todo], branch: str) -> list[str]:
             lines.append(body)
         lines.append("")
     lines.append("Commands:")
-    if branch == branches.dev:
+    if can_manage_todos:
         lines.append(
             '- Claim a todo: `python -B .agent_core/harness/main.py todo claim "<title or slug>" <user>`'
         )
@@ -554,7 +555,7 @@ def _open_todos_section(records: list[Todo], branch: str) -> list[str]:
         )
     else:
         lines.append(
-            f"- Todo claim/create/delete commands must run from mission control on `{branches.dev}`."
+            f"- Todo claim/create/delete commands must run from `{branches.dev}` or from an active spec branch that will merge back to `{branches.dev}`."
         )
     lines.append("- List all todos: `python -B .agent_core/harness/main.py todo list`")
     lines.append("")
@@ -656,6 +657,17 @@ def _sync_warning_section(sync_warning: str) -> list[str]:
         "The default sync step failed, but onboard context was still generated."
     )
     lines.append(f"Reason: {sync_warning}")
+    if "GITHUB_TOKEN is not set" in sync_warning:
+        lines.append("")
+        lines.append(
+            "This means GitHub sync did not run and the authenticated GitHub user could not be added to .agent_core/user_mappings.toml."
+        )
+        lines.append(
+            "You must explicitly warn the user that GITHUB_TOKEN is missing before doing any other work."
+        )
+        lines.append(
+            "Tell the user they must configure a GitHub token with repo and read:user scopes, then rerun onboard so sync and user mapping maintenance can complete."
+        )
     lines.append("")
     lines.append("Report this warning to the user before doing any other work.")
     lines.append("")
@@ -680,6 +692,11 @@ def _agent_instruction_section(
             f"{item_number}. State that this is the `{active_spec.slug}` spec worktree and summarize its current task state."
         )
         item_number += 1
+        if open_todos:
+            lines.append(
+                f"{item_number}. Mention that open todos are available and can be managed from this active spec branch."
+            )
+            item_number += 1
     else:
         branches = get_branch_names()
         lines.append(f"{item_number}. State that no spec is currently active.")
@@ -745,8 +762,7 @@ def _onboard_output_section(
 
     lines.extend(_work_logs_section(active_spec))
 
-    if active_spec is None:
-        lines.extend(_open_todos_section(open_todos, branch))
+    lines.extend(_open_todos_section(open_todos, active_spec, branch))
 
     lines.extend(_workflow_hints_section(active_spec, branch))
     lines.extend(_next_steps_section(active_spec, open_todos, branch))
