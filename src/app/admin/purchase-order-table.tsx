@@ -4,6 +4,9 @@ import { useState, useRef, useTransition } from "react";
 import { addDocumentsToRequest, markOrderPlaced, markReadyForPickup, editRequest, sendToDirectorApproval } from "@/actions/request";
 import { EditOrderModal } from "@/components/edit-order-modal";
 import { addSupplier } from "@/app/admin/supplier-actions";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export function PurchaseOrderTable({
   requests,
@@ -31,6 +34,7 @@ export function PurchaseOrderTable({
   const [dateFilter, setDateFilter] = useState("");
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "COMPLETED">("ACTIVE");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isPendingAction, startTransition] = useTransition();
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL" || urgencyFilter !== "ALL" || locationFilter !== "ALL" || requesterFilter !== "ALL" || supplierFilter !== "ALL" || dateFilter !== "";
@@ -47,7 +51,7 @@ export function PurchaseOrderTable({
 
   const handleAdvanceStatus = (req: any, customAction?: string) => {
     setOpenMenuId(null);
-    if (req.status === "AWAITING_PLACEMENT" && req.supplier === "Unsure (To be confirmed)" && !customAction) {
+    if ((req.status === "AWAITING_PLACEMENT" || req.status === "SENT_BACK") && req.supplier === "Unsure (To be confirmed)" && !customAction) {
       setSelectingSupplierForRequest(req);
       return;
     }
@@ -56,7 +60,7 @@ export function PurchaseOrderTable({
       try {
         if (customAction === "send_to_director") {
           await sendToDirectorApproval(req.id);
-        } else if (req.status === "AWAITING_PLACEMENT") {
+        } else if (req.status === "AWAITING_PLACEMENT" || req.status === "SENT_BACK") {
           await markOrderPlaced(req.id);
         } else if (req.status === "ORDER_PLACED") {
           await markReadyForPickup(req.id);
@@ -79,7 +83,7 @@ export function PurchaseOrderTable({
       new Date(req.createdAt).toLocaleDateString().includes(searchQuery);
     
     // Filter by status
-    const matchesStatus = statusFilter === "ALL" || req.status === statusFilter;
+    const matchesStatus = statusFilter === "ALL" || req.status === statusFilter || (statusFilter === "AWAITING_PLACEMENT" && req.status === "SENT_BACK");
     
     // Filter by urgency
     const matchesUrgency = urgencyFilter === "ALL" || req.urgency === urgencyFilter;
@@ -101,6 +105,10 @@ export function PurchaseOrderTable({
     const matchesSupplier = supplierFilter === "ALL" || req.supplier === supplierFilter;
 
     return matchesSearch && matchesStatus && matchesUrgency && matchesLocation && matchesRequester && matchesDateFilter && matchesTab && matchesSupplier;
+  }).sort((a, b) => {
+    if (a.status === "SENT_BACK" && b.status !== "SENT_BACK") return -1;
+    if (b.status === "SENT_BACK" && a.status !== "SENT_BACK") return 1;
+    return 0;
   });
 
   // Calculate counts for active stages
@@ -112,7 +120,9 @@ export function PurchaseOrderTable({
     READY_FOR_PICKUP: 0,
   };
   requests.forEach(r => {
-    if (stageCounts[r.status as keyof typeof stageCounts] !== undefined) {
+    if (r.status === "SENT_BACK") {
+      stageCounts["AWAITING_PLACEMENT"]++;
+    } else if (stageCounts[r.status as keyof typeof stageCounts] !== undefined) {
       stageCounts[r.status as keyof typeof stageCounts]++;
     }
   });
@@ -124,6 +134,54 @@ export function PurchaseOrderTable({
     { key: "ORDER_PLACED", label: "Order Placed", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
     { key: "READY_FOR_PICKUP", label: "Ready for Pickup", color: "bg-teal-50 text-teal-700 border-teal-200" },
   ];
+
+  const exportTable = (type: "PDF" | "EXCEL") => {
+    if (filteredRequests.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const data = filteredRequests.map(req => ({
+      Date: new Date(req.createdAt).toLocaleDateString(),
+      'Requested By': req.requestedBy,
+      'Item Details': req.itemDetails,
+      Quantity: req.quantity || "—",
+      Metric: req.metric || "Units",
+      Location: req.farmLocation,
+      Urgency: req.urgency,
+      Status: req.status === 'SENT_BACK' ? 'Sent back' :
+              req.status === 'PENDING' ? 'Awaiting manager approval' :
+              req.status === 'PENDING_DIRECTOR' ? 'Awaiting director approval' : 
+              req.status === 'AWAITING_PLACEMENT' ? 'Order waiting for placement' :
+              req.status === 'ORDER_PLACED' ? 'Order placed' :
+              req.status === 'READY_FOR_PICKUP' ? 'Order received' :
+              req.status === 'COMPLETED' ? 'Picked up' : req.status,
+      Supplier: req.supplier || "—"
+    }));
+
+    if (type === "EXCEL") {
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Orders");
+      XLSX.writeFile(workbook, `Purchase_Orders_${activeTab}.xlsx`);
+    } else if (type === "PDF") {
+      const doc = new jsPDF();
+      const tableColumn = ["Date", "Requested By", "Item Details", "Qty", "Metric", "Location", "Urgency", "Status", "Supplier"];
+      const tableRows = data.map(row => Object.values(row));
+      
+      doc.text(`Purchase Orders - ${activeTab}`, 14, 15);
+      
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 20,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [220, 38, 38] }, // brand-red
+      });
+      
+      doc.save(`Purchase_Orders_${activeTab}.pdf`);
+    }
+  };
 
   return (
     <div className="bg-white rounded-[32px] shadow-sm p-8 min-h-[60vh] flex flex-col">
@@ -234,6 +292,31 @@ export function PurchaseOrderTable({
               Clear Filters
             </button>
           )}
+
+          <div className="relative ml-auto">
+            <button 
+              onClick={() => setExportMenuOpen(!exportMenuOpen)}
+              className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm bg-white"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Export
+            </button>
+            {exportMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setExportMenuOpen(false)}></div>
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-30">
+                  <button onClick={() => { exportTable("EXCEL"); setExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Excel
+                  </button>
+                  <button onClick={() => { exportTable("PDF"); setExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-brand-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    PDF
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -260,6 +343,7 @@ export function PurchaseOrderTable({
               <th className="px-3 py-4 whitespace-nowrap">Requested By</th>
               <th className="px-3 py-4 w-full">Item Details</th>
               <th className="px-3 py-4">Quantity</th>
+              <th className="px-3 py-4">Metric</th>
               <th className="px-3 py-4">Location</th>
               <th className="px-3 py-4">Urgency</th>
               <th className="px-3 py-4">Status</th>
@@ -283,9 +367,27 @@ export function PurchaseOrderTable({
                   </td>
                   <td className="px-3 py-4 text-gray-600 whitespace-normal break-words">
                     {req.itemDetails}
+                    {req.status === "SENT_BACK" && req.sendBackReason && (
+                      <div className="mt-2 p-2 bg-orange-50 border border-orange-100 rounded-lg text-xs text-orange-800">
+                        <span className="font-semibold block mb-0.5">Reason for return:</span>
+                        {req.sendBackReason}
+                      </div>
+                    )}
+                    {req.fileUrls && req.fileUrls.length > 0 && (
+                      <div 
+                        onClick={() => setViewingDocsRequest(req)}
+                        className="mt-2 flex items-center text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg w-fit cursor-pointer hover:bg-blue-100 transition-colors shadow-sm"
+                      >
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        {req.fileUrls.length} Attachment{req.fileUrls.length > 1 ? 's' : ''}
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-4 text-gray-600 break-words">
                     {req.quantity || "—"}
+                  </td>
+                  <td className="px-3 py-4 text-gray-600 break-words">
+                    {req.metric || "Units"}
                   </td>
                   <td className="px-3 py-4 text-gray-600 break-words">
                     {req.farmLocation}
@@ -301,17 +403,19 @@ export function PurchaseOrderTable({
                     </span>
                   </td>
                   <td className="px-3 py-4 align-middle">
-                    <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-medium text-center ${
-                      req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                    <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-medium text-center border ${
+                      req.status === 'SENT_BACK' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                      req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 border-transparent' :
                       req.status === 'DENIED' ? 'bg-red-100 text-red-700' :
                       req.status === 'PENDING_DIRECTOR' ? 'bg-blue-100 text-blue-700' :
                       req.status === 'AWAITING_PLACEMENT' ? 'bg-purple-100 text-purple-700' :
                       req.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
                       req.status === 'READY_FOR_PICKUP' ? 'bg-teal-100 text-teal-700' :
                       req.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                      'bg-yellow-100 text-yellow-700'
+                      'bg-yellow-100 text-yellow-700 border-transparent'
                     }`}>
-                      {req.status === 'PENDING' ? 'Awaiting manager approval' :
+                      {req.status === 'SENT_BACK' ? 'Sent back' :
+                       req.status === 'PENDING' ? 'Awaiting manager approval' :
                        req.status === 'PENDING_DIRECTOR' ? 'Awaiting director approval' : 
                        req.status === 'AWAITING_PLACEMENT' ? 'Order waiting for placement' :
                        req.status === 'ORDER_PLACED' ? 'Order placed' :
@@ -338,7 +442,7 @@ export function PurchaseOrderTable({
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)}></div>
                         <div className={`absolute right-6 ${dropUp ? 'bottom-10 mb-1' : 'top-10 mt-1'} w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50`}>
-                        {req.status === "AWAITING_PLACEMENT" && (
+                        {(req.status === "AWAITING_PLACEMENT" || req.status === "SENT_BACK") && (
                           <>
                             <button 
                               disabled={isPendingAction}

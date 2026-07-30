@@ -8,9 +8,11 @@ interface ApprovalNeededEmailProps {
   itemDetails: string;
   urgency: string;
   quantity: string | number | null;
+  metric?: string | null;
   fileUrls: string[];
   reviewerRole: 'MANAGER' | 'DIRECTOR';
   fallbackNotice?: string;
+  referralNote?: string;
 }
 
 export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> = ({
@@ -21,9 +23,11 @@ export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> =
   itemDetails,
   urgency,
   quantity,
+  metric,
   fileUrls,
   reviewerRole,
   fallbackNotice,
+  referralNote,
 }) => {
   const reviewPath = reviewerRole === 'MANAGER' ? `/manager/review/${id}` : `/director/review/${id}`;
   const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${reviewPath}`;
@@ -56,7 +60,16 @@ export const ApprovalNeededEmail: React.FC<Readonly<ApprovalNeededEmailProps>> =
         </p>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Category:</strong> {category}</p>
         <p style={{ margin: '0 0 12px 0', fontSize: '15px', lineHeight: '1.5' }}><strong style={{ color: '#374151' }}>Details & Reason:</strong><br/>{itemDetails}</p>
-        <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity || "—"}</p>
+        <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}><strong style={{ color: '#374151' }}>Quantity:</strong> {quantity || "—"} {metric && metric !== "Units" ? metric : ""}</p>
+        
+        {referralNote && (
+          <div style={{ marginTop: '16px', backgroundColor: '#eff6ff', padding: '16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+            <p style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', lineHeight: '1.5' }}>
+              <strong>Manager's Note:</strong><br/>
+              <span style={{ fontStyle: 'italic' }}>"{referralNote}"</span>
+            </p>
+          </div>
+        )}
 
         {fileUrls && fileUrls.length > 0 && (
           <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>

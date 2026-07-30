@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { markPickedUp } from "@/actions/request";
+import { markPickedUp, sendBackOrder } from "@/actions/request";
 import { usePathname } from "next/navigation";
 
 export function FilterableRequestsTable({
@@ -26,6 +26,8 @@ export function FilterableRequestsTable({
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "COMPLETED">("ACTIVE");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isPendingAction, setIsPendingAction] = useState(false);
+  const [sendBackId, setSendBackId] = useState<string | null>(null);
+  const [sendBackReason, setSendBackReason] = useState("");
   const pathname = usePathname();
   
   // Use userRole if provided, otherwise fallback to pathname check
@@ -210,6 +212,7 @@ export function FilterableRequestsTable({
                 <th className="px-6 py-4">Location</th>
                 <th className="px-6 py-4">Urgency</th>
                 <th className="px-6 py-4">Qty</th>
+                <th className="px-6 py-4">Metric</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Supplier</th>
                 <th className="px-6 py-4 text-right">Action</th>
@@ -255,6 +258,10 @@ export function FilterableRequestsTable({
                     statusDisplay = "Denied";
                     statusColor = "bg-red-100 text-red-800";
                     break;
+                  case "SENT_BACK":
+                    statusDisplay = "Sent back";
+                    statusColor = "bg-orange-100 text-orange-800";
+                    break;
                 }
 
                 return (
@@ -262,7 +269,19 @@ export function FilterableRequestsTable({
                     <td className="px-6 py-4 whitespace-nowrap">{dateStr}</td>
                     {type !== "MY_REQUESTS" && <td className="px-6 py-4 font-medium text-gray-900">{req.requestedBy}</td>}
                     <td className="px-6 py-4 font-medium text-gray-900">{req.category}</td>
-                    <td className="px-6 py-4 max-w-[200px] truncate" title={req.itemDetails}>{req.itemDetails}</td>
+                    <td className="px-6 py-4 max-w-[250px]">
+                      <div className="truncate" title={req.itemDetails}>{req.itemDetails}</div>
+                      {req.status === "DENIED" && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded-lg text-xs text-red-800 shadow-sm whitespace-normal break-words">
+                          <span className="font-semibold block mb-0.5">Reason for decline:</span>
+                          {req.directorComment 
+                            ? req.directorComment 
+                            : (req.managerComment && !req.managerApprovalDate) 
+                              ? req.managerComment 
+                              : "No additional reason added"}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">{req.farmLocation}</td>
                     <td className="px-6 py-4">
                       {req.urgency && (
@@ -277,6 +296,7 @@ export function FilterableRequestsTable({
                       )}
                     </td>
                     <td className="px-6 py-4">{req.quantity || "1"}</td>
+                    <td className="px-6 py-4">{req.metric || "Units"}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}`}>
                         {statusDisplay}
@@ -319,29 +339,56 @@ export function FilterableRequestsTable({
                                     {req.status === 'PENDING' || req.status === 'PENDING_DIRECTOR' ? "Review Request" : "View Details"}
                                   </Link>
                                 )}
-                                {type === "MY_REQUESTS" && req.status === "READY_FOR_PICKUP" && (
-                                  <button
-                                    disabled={isPendingAction}
-                                    onClick={async () => {
-                                      setIsPendingAction(true);
-                                      try {
-                                        await markPickedUp(req.id);
-                                        setOpenMenuId(null);
-                                      } catch (e: any) {
-                                        alert(e.message || "Failed to mark as picked up");
-                                      } finally {
-                                        setIsPendingAction(false);
-                                      }
-                                    }}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                {type === "MY_REQUESTS" && req.status === "PENDING" && (
+                                  <Link
+                                    href={`/requests/${req.id}/edit`}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
                                   >
-                                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    Mark as Picked Up
-                                  </button>
+                                    Edit Request
+                                  </Link>
                                 )}
-                                {type === "MY_REQUESTS" && req.status !== "READY_FOR_PICKUP" && (
+                                {type === "MY_REQUESTS" && req.status === "READY_FOR_PICKUP" && (
+                                  <>
+                                    <button
+                                      disabled={isPendingAction}
+                                      onClick={async () => {
+                                        setIsPendingAction(true);
+                                        try {
+                                          await markPickedUp(req.id);
+                                          setOpenMenuId(null);
+                                        } catch (e: any) {
+                                          alert(e.message || "Failed to mark as picked up");
+                                        } finally {
+                                          setIsPendingAction(false);
+                                        }
+                                      }}
+                                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      Mark as Picked Up
+                                    </button>
+                                    <button
+                                      disabled={isPendingAction}
+                                      onClick={() => {
+                                        setSendBackId(req.id);
+                                        setSendBackReason("");
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                      <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                      </svg>
+                                      Send back
+                                    </button>
+                                  </>
+                                )}
+                                {type === "MY_REQUESTS" && req.status !== "READY_FOR_PICKUP" && req.status !== "PENDING" && (
                                   <div className="px-4 py-2.5 text-sm text-gray-400 italic">
                                     No actions available
                                   </div>
@@ -357,6 +404,53 @@ export function FilterableRequestsTable({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* Send Back Dialog */}
+      {sendBackId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Send Order Back</h3>
+              <p className="text-sm text-gray-500 mb-4">Please provide a reason for sending this order back (e.g. wrong quantity, incorrect color, damaged).</p>
+              
+              <textarea
+                value={sendBackReason}
+                onChange={(e) => setSendBackReason(e.target.value)}
+                placeholder="Type your reason here..."
+                rows={4}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none"
+                autoFocus
+              />
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setSendBackId(null)}
+                disabled={isPendingAction}
+                className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!sendBackReason.trim()) return;
+                  setIsPendingAction(true);
+                  try {
+                    await sendBackOrder(sendBackId, sendBackReason);
+                    setSendBackId(null);
+                  } catch (e: any) {
+                    alert(e.message || "Failed to send back order");
+                  } finally {
+                    setIsPendingAction(false);
+                  }
+                }}
+                disabled={isPendingAction || !sendBackReason.trim()}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-brand-red hover:bg-brand-red/90 rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isPendingAction ? "Sending..." : "Submit"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

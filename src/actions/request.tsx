@@ -24,6 +24,7 @@ export async function submitRequest(formData: FormData) {
   const itemDetails = formData.get("itemDetails") as string;
   const urgency = formData.get("urgency") as string;
   const quantity = formData.get("quantity") as string;
+  const metric = formData.get("metric") as string || "Units";
   const supplier = formData.get("supplier") as string;
   const photoFiles = formData.getAll("photoAttachment") as File[];
 
@@ -43,13 +44,14 @@ export async function submitRequest(formData: FormData) {
   // Directors skip both manager and director approval — their requests go straight to AWAITING_PLACEMENT
   const bypassDirector = formData.get("bypassDirector") === "true";
   const isManager = submittedByRole === "MANAGER";
-  const isElevatedRole = isManager || submittedByRole === "ADMIN";
+  const isAdmin = submittedByRole === "ADMIN";
+  const isElevatedRole = isManager || isAdmin;
   const isDirector = submittedByRole === "DIRECTOR";
   
   let initialStatus = "PENDING";
   if (isDirector) {
     initialStatus = "AWAITING_PLACEMENT";
-  } else if (isManager && bypassDirector) {
+  } else if ((isManager || isAdmin) && bypassDirector) {
     initialStatus = "AWAITING_PLACEMENT";
   } else if (isElevatedRole) {
     initialStatus = "PENDING_DIRECTOR";
@@ -63,6 +65,7 @@ export async function submitRequest(formData: FormData) {
     itemDetails,
     urgency,
     quantity: quantity || "1",
+    metric: metric || "Units",
     supplier: supplier || null,
     fileUrls,
     status: initialStatus,
@@ -70,7 +73,7 @@ export async function submitRequest(formData: FormData) {
 
   if (ENABLE_EMAILS && resend && process.env.RESEND_FROM_EMAIL) {
     try {
-      if (isDirector || (isManager && bypassDirector)) {
+      if (isDirector || ((isManager || isAdmin) && bypassDirector)) {
         console.log(`[RESEND] Request skipped approvals: ${newRequest.id}`);
       } else if (isElevatedRole) {
         // Needs Director Approval
@@ -91,6 +94,7 @@ export async function submitRequest(formData: FormData) {
             itemDetails={itemDetails}
             urgency={urgency}
             quantity={newRequest.quantity}
+            metric={newRequest.metric}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="DIRECTOR"
             fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
@@ -128,6 +132,7 @@ export async function submitRequest(formData: FormData) {
             itemDetails={itemDetails}
             urgency={urgency}
             quantity={newRequest.quantity}
+            metric={newRequest.metric}
             fileUrls={newRequest.fileUrls || []}
             reviewerRole="MANAGER"
             fallbackNotice={isFallback ? "This email was sent to you because the Manager's email address was not available." : undefined}
@@ -149,6 +154,7 @@ export async function submitRequest(formData: FormData) {
     console.warn("[RESEND] Not configured. Skipping email dispatch.");
   }
   revalidatePath("/");
+  revalidatePath("/admin");
   return { success: true, requestId: newRequest.id };
 }
 
@@ -197,9 +203,11 @@ export async function referToDirector(id: string, comment?: string) {
           itemDetails={updatedRequest.itemDetails}
           urgency={updatedRequest.urgency}
           quantity={updatedRequest.quantity}
+          metric={updatedRequest.metric}
           fileUrls={updatedRequest.fileUrls || []}
           reviewerRole="DIRECTOR"
           fallbackNotice={isFallback ? "This email was sent to you because a Director's email address was not available." : undefined}
+          referralNote={comment}
         />
       );
 
@@ -342,6 +350,7 @@ export async function markReadyForPickup(id: string) {
           category={updatedRequest.category}
           itemDetails={updatedRequest.itemDetails}
           quantity={updatedRequest.quantity}
+          metric={updatedRequest.metric}
           fallbackNotice={isFallback ? "This email was sent to you because the employee's email address was not available." : undefined}
         />
       );
@@ -378,6 +387,7 @@ export async function editRequest(
     itemDetails: string;
     urgency: string;
     quantity: string;
+    metric?: string;
     supplier?: string;
   }
 ) {
@@ -396,6 +406,7 @@ export async function editRequest(
       itemDetails: data.itemDetails,
       urgency: data.urgency,
       quantity: data.quantity || "1",
+      metric: data.metric || "Units",
       supplier: data.supplier || null,
     })
     .where(sql`id = ${id}`);
@@ -410,5 +421,19 @@ export async function sendToDirectorApproval(id: string) {
   await db.update(requests).set({ status: "PENDING_DIRECTOR" }).where(sql`id = ${id}`);
   revalidatePath("/admin");
   revalidatePath("/requests");
+  return { success: true };
+}
+
+export async function sendBackOrder(id: string, reason: string) {
+  await db.update(requests)
+    .set({ 
+      status: "SENT_BACK",
+      sendBackReason: reason
+    })
+    .where(sql`id = ${id}`);
+  
+  revalidatePath("/admin");
+  revalidatePath("/requests");
+  revalidatePath("/home");
   return { success: true };
 }
