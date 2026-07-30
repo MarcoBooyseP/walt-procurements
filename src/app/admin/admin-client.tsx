@@ -10,8 +10,9 @@ import { CategoryManager } from "./category-manager";
 import { SupplierManager } from "./supplier-manager";
 import { PurchaseOrderTable } from "./purchase-order-table";
 import { AnalyticsDashboard } from "./analytics-dashboard";
+import { RequestForm } from "@/components/request-form";
 
-type Tab = "overview" | "analytics" | "settings";
+type Tab = "overview" | "analytics" | "lodge_request" | "settings";
 
 export function AdminClient({
   employeesData,
@@ -22,6 +23,8 @@ export function AdminClient({
   categoriesData,
   requestsData,
   suppliersData,
+  dbUser,
+  userLocationName,
 }: {
   employeesData: any[];
   managersData: any[];
@@ -31,12 +34,14 @@ export function AdminClient({
   categoriesData: any[];
   requestsData: any[];
   suppliersData: any[];
+  dbUser?: any;
+  userLocationName?: string;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row w-full">
       {/* Mobile Header */}
       <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Admin Portal</h1>
@@ -95,6 +100,20 @@ export function AdminClient({
           </button>
           <button
             onClick={() => {
+              setActiveTab("lodge_request");
+              setIsMobileSidebarOpen(false);
+            }}
+            className={`w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-colors ${
+              activeTab === "lodge_request"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+          >
+            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Lodge Request
+          </button>
+          <button
+            onClick={() => {
               setActiveTab("settings");
               setIsMobileSidebarOpen(false);
             }}
@@ -125,8 +144,8 @@ export function AdminClient({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto min-h-screen md:h-screen">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto min-h-screen md:h-screen min-w-0">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1">
           {activeTab === "overview" && (
             <PurchaseOrderTable 
               requests={requestsData} 
@@ -138,6 +157,24 @@ export function AdminClient({
 
           {activeTab === "analytics" && (
             <AnalyticsDashboard requests={requestsData} />
+          )}
+
+          {activeTab === "lodge_request" && dbUser && (
+            <div className="max-w-lg mx-auto w-full bg-white rounded-[32px] shadow-sm p-8 mt-4 border border-gray-100">
+              <div className="mb-6 border-b border-gray-100 pb-4">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Lodge a Request</h2>
+                <p className="text-sm text-gray-500 mt-1">Submit a new field supply request.</p>
+              </div>
+              <RequestForm 
+                userName={`${dbUser.name} ${dbUser.surname}`}
+                userId={dbUser.id}
+                userRole={dbUser.role}
+                userLocationName={userLocationName || ""}
+                locations={locationsData}
+                categories={categoriesData}
+                suppliers={suppliersData}
+              />
+            </div>
           )}
 
           {activeTab === "settings" && (

@@ -233,7 +233,7 @@ export function AnalyticsDashboard({ requests }: { requests: any[] }) {
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 13, fontWeight: 500}} width={120} />
-                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} labelStyle={{color: '#111827', fontWeight: 600, paddingBottom: '4px'}} itemStyle={{color: '#4B5563', fontSize: '14px'}} />
                 <Bar dataKey="count" fill="#8A1F2D" radius={[0, 8, 8, 0]} barSize={32}>
                   {data.funnelData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={['#8A1F2D', '#D97706', '#2563EB', '#059669', '#7C3AED'][index % 5]} />
@@ -253,7 +253,7 @@ export function AnalyticsDashboard({ requests }: { requests: any[] }) {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 11}} tickMargin={12} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} labelStyle={{color: '#111827', fontWeight: 600, paddingBottom: '4px'}} itemStyle={{color: '#4B5563', fontSize: '14px'}} />
                 <Bar dataKey="hours" fill="#4B5563" radius={[8, 8, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
@@ -273,9 +273,9 @@ export function AnalyticsDashboard({ requests }: { requests: any[] }) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.locationData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} tickMargin={12} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 11}} tickMargin={12} interval={0} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} labelStyle={{color: '#111827', fontWeight: 600, paddingBottom: '4px'}} itemStyle={{color: '#4B5563', fontSize: '14px'}} />
                 <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={60}>
                   {data.locationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === 0 ? '#aa272f' : '#2563EB'} />
@@ -307,7 +307,7 @@ export function AnalyticsDashboard({ requests }: { requests: any[] }) {
                       <Cell key={`cell-${index}`} fill={URGENCY_COLORS[entry.name as keyof typeof URGENCY_COLORS] || '#6B7280'} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                  <RechartsTooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} labelStyle={{color: '#111827', fontWeight: 600, paddingBottom: '4px'}} itemStyle={{color: '#4B5563', fontSize: '14px'}} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -339,7 +339,7 @@ export function AnalyticsDashboard({ requests }: { requests: any[] }) {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                  <RechartsTooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} labelStyle={{color: '#111827', fontWeight: 600, paddingBottom: '4px'}} itemStyle={{color: '#4B5563', fontSize: '14px'}} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

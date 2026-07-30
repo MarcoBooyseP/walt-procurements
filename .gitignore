@@ -51,8 +51,15 @@ next-env.d.ts
 .claude
 .claude/
 
-.agent_core/tmp/
 
 # Agent Core worktree symlinks
 .agent_core/docs/data
 .agent_core/docs/data/
+
+# Agent Core state
+!.agent_core/
+!.agent_core/**
+.agent_core/tmp/
+.agent_core/tmp/**
+.cache/pycache/
+.cache/pycache/**

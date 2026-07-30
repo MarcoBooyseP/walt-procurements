@@ -7,8 +7,9 @@ import { AdminClient } from "./admin-client";
 
 export default async function AdminPage() {
   const session = await auth();
+  const sessionUser = session?.user as any;
   
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || sessionUser?.role !== "ADMIN") {
     redirect("/home");
   }
 
@@ -64,6 +65,13 @@ export default async function AdminPage() {
     .from(suppliers)
     .orderBy(desc(suppliers.createdAt));
 
+  const [dbUser] = sessionUser?.id
+    ? await db.select({ id: users.id, name: users.name, surname: users.surname, role: users.role, locationId: users.locationId })
+        .from(users).where(eq(users.id, sessionUser.id)).limit(1)
+    : [null];
+
+  const userLocationName = locationsData.find((l: any) => l.id === dbUser?.locationId)?.name || "";
+
   return (
     <AdminClient
       employeesData={employeesData}
@@ -74,6 +82,8 @@ export default async function AdminPage() {
       categoriesData={categoriesData}
       requestsData={requestsData}
       suppliersData={suppliersData}
+      dbUser={dbUser}
+      userLocationName={userLocationName}
     />
   );
 }

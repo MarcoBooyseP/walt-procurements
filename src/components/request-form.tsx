@@ -233,6 +233,29 @@ export function RequestForm({
         />
       </div>
 
+      {/* Metric */}
+      <div className="flex flex-col gap-2">
+        <label htmlFor="metric" className="font-semibold text-brand-gray text-[17px] flex items-center gap-1">
+          Metric
+        </label>
+        <div className="relative">
+          <select
+            name="metric"
+            id="metric"
+            defaultValue="Units"
+            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-[17px] text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all"
+          >
+            <option value="Units">Units</option>
+            <option value="Liters">Liters</option>
+            <option value="Kilograms">Kilograms</option>
+            <option value="Meters">Meters</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-gray">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
+
       {/* Urgency */}
       <div className="flex flex-col gap-3">
         <label className="font-semibold text-brand-gray text-[17px]">Urgency</label>
@@ -313,7 +336,7 @@ export function RequestForm({
       </div>
 
       {/* Submit */}
-      {userRole === "MANAGER" ? (
+      {userRole === "MANAGER" || userRole === "ADMIN" ? (
         <div className="mt-6 flex flex-col gap-3">
           <button
             type="submit"
@@ -352,7 +375,7 @@ export function RequestForm({
         </button>
       )}
 
-      {userRole !== "MANAGER" && userRole !== "DIRECTOR" && (
+      {userRole !== "MANAGER" && userRole !== "DIRECTOR" && userRole !== "ADMIN" && (
         <Link 
           href="/requests"
           className="mt-2 w-full py-4 px-6 bg-white border-2 border-gray-200 text-gray-700 text-[17px] font-bold rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-all flex items-center justify-center"

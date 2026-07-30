@@ -175,13 +175,13 @@ export default async function ManagerReviewPage({
                 }} className="space-y-6">
                   <div className="flex flex-col gap-2">
                     <label htmlFor="managerComment" className="text-sm font-bold text-brand-gray uppercase tracking-wider">
-                      Manager Comment <span className="font-normal text-brand-gray/40">(Optional)</span>
+                      Manager Comment / Referral Note <span className="font-normal text-brand-gray/40">(Optional)</span>
                     </label>
                     <textarea
                       id="managerComment"
                       name="managerComment"
                       rows={3}
-                      placeholder="Add any instructions or reasons for denial here..."
+                      placeholder="Add any instructions, reasons for denial, or context for the director here..."
                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none"
                     ></textarea>
                   </div>

@@ -32,6 +32,7 @@ export function EditOrderModal({
     const itemDetails = formData.get("itemDetails") as string;
     const urgency = (formData.get("urgency") as string) || request.urgency;
     const quantity = (formData.get("quantity") as string) || request.quantity;
+    const metric = (formData.get("metric") as string) || request.metric || "Units";
     const supplier = formData.get("supplier") as string;
 
     if (!farmLocation) newErrors.farmLocation = "Please select a location";
@@ -51,6 +52,7 @@ export function EditOrderModal({
           itemDetails,
           urgency,
           quantity,
+          metric,
           supplier,
         });
         onClose();
@@ -185,6 +187,30 @@ export function EditOrderModal({
                   disabled={!allowQuantityEdit}
                   className={`w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all ${allowQuantityEdit ? 'bg-white' : 'bg-gray-50 cursor-not-allowed'}`}
                 />
+              </div>
+
+              {/* Metric */}
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label htmlFor="metric" className="font-semibold text-brand-gray text-sm flex items-center gap-1">
+                  Metric
+                </label>
+                <div className="relative">
+                  <select
+                    name="metric"
+                    id="metric"
+                    defaultValue={request.metric || "Units"}
+                    disabled={!allowQuantityEdit}
+                    className={`w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-brand-gray shadow-sm appearance-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all ${allowQuantityEdit ? 'bg-white' : 'bg-gray-50 cursor-not-allowed'}`}
+                  >
+                    <option value="Units">Units</option>
+                    <option value="Liters">Liters</option>
+                    <option value="Kilograms">Kilograms</option>
+                    <option value="Meters">Meters</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-brand-gray">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
               </div>
 
               {/* Urgency */}

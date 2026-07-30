@@ -33,9 +33,9 @@ app = typer.Typer(help="Build local project context")
 def _ensure_tmp_ignored() -> None:
     try:
         if ensure_agent_core_tmp_ignored(PROJECT_PATHS.project_root / ".gitignore"):
-            typer.echo("Onboard mutated .gitignore: ensured .agent_core/tmp/ is ignored.")
+            typer.echo("Onboard applied .gitignore patch: ensured Agent Core state is tracked except .agent_core/tmp/ and .cache/pycache/ is ignored.")
     except OSError as error:
-        typer.echo(f"Warning: could not ensure .agent_core/tmp/ is ignored: {error}", err=True)
+        typer.echo(f"Warning: could not ensure Agent Core .gitignore state rules: {error}", err=True)
 
 
 def _main_repo_non_dev_branch_message() -> str | None:
@@ -121,11 +121,12 @@ def run(
                 typer.echo(f"Missing or empty {PROJECT_PATHS.config_file_display}", err=True)
             raise typer.Exit(code=1)
 
-        try:
-            if ensure_user_mappings_file():
-                typer.echo(f"Onboard mutated {PROJECT_PATHS.user_mappings_file_display}: ensured current mapping format.")
-        except Exception as error:
-            typer.echo(f"Warning: could not ensure {PROJECT_PATHS.user_mappings_file_display}: {error}", err=True)
+        if no_sync:
+            try:
+                if ensure_user_mappings_file():
+                    typer.echo(f"Onboard mutated {PROJECT_PATHS.user_mappings_file_display}: ensured current mapping format.")
+            except Exception as error:
+                typer.echo(f"Warning: could not ensure {PROJECT_PATHS.user_mappings_file_display}: {error}", err=True)
 
         try:
             missing_ignores = ensure_symlink_paths_ignored(
