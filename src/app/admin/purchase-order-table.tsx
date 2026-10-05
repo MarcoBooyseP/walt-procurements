@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { addDocumentsToRequest, markOrderPlaced, markReadyForPickup, editRequest, sendToDirectorApproval } from "@/actions/request";
+import { addDocumentsToRequest, markOrderPlaced, markReadyForPickup, markPickedUp, sendBackOrder, deleteOwnRequest, editRequest, sendToDirectorApproval } from "@/actions/request";
 import { EditOrderModal } from "@/components/edit-order-modal";
 import { addSupplier } from "@/app/admin/supplier-actions";
 import jsPDF from "jspdf";
@@ -13,11 +13,13 @@ export function PurchaseOrderTable({
   locations,
   categories,
   suppliers,
+  currentUserId,
 }: { 
   requests: any[];
   locations: any[];
   categories: any[];
   suppliers: any[];
+  currentUserId?: string;
 }) {
   const [viewingDocsRequest, setViewingDocsRequest] = useState<any | null>(null);
   const [viewingTimelineRequest, setViewingTimelineRequest] = useState<any | null>(null);
@@ -34,6 +36,9 @@ export function PurchaseOrderTable({
   const [dateFilter, setDateFilter] = useState("");
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "COMPLETED">("ACTIVE");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [sendBackId, setSendBackId] = useState<string | null>(null);
+  const [sendBackReason, setSendBackReason] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isPendingAction, startTransition] = useTransition();
 
@@ -474,6 +479,39 @@ export function PurchaseOrderTable({
                             Mark Order Received
                           </button>
                         )}
+                        {req.status === "READY_FOR_PICKUP" && (
+                          <>
+                            <button
+                              disabled={isPendingAction}
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                startTransition(async () => {
+                                  try {
+                                    await markPickedUp(req.id);
+                                  } catch (error: any) {
+                                    alert(error.message || "Failed to mark as picked up");
+                                  }
+                                });
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                              Mark as Picked Up
+                            </button>
+                            <button
+                              disabled={isPendingAction}
+                              onClick={() => {
+                                setSendBackId(req.id);
+                                setSendBackReason("");
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                              Send back
+                            </button>
+                          </>
+                        )}
                         <button 
                           onClick={() => {
                             setOpenMenuId(null);
@@ -504,6 +542,19 @@ export function PurchaseOrderTable({
                           <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           View Documents
                         </button>
+                        {currentUserId && req.submittedByUserId === currentUserId && (
+                          <button
+                            disabled={isPendingAction}
+                            onClick={() => {
+                              setDeleteId(req.id);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center disabled:opacity-50"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Delete Order
+                          </button>
+                        )}
                       </div>
                       </>
                     )}
@@ -813,6 +864,88 @@ export function PurchaseOrderTable({
           suppliers={suppliers}
           onClose={() => setEditingRequest(null)}
         />
+      )}
+      {sendBackId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Send Order Back</h3>
+              <p className="text-sm text-gray-500 mb-4">Please provide a reason for sending this order back (e.g. wrong quantity, incorrect color, damaged).</p>
+              <textarea
+                value={sendBackReason}
+                onChange={(e) => setSendBackReason(e.target.value)}
+                placeholder="Type your reason here..."
+                rows={4}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all resize-none"
+                autoFocus
+              />
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setSendBackId(null)}
+                disabled={isPendingAction}
+                className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!sendBackReason.trim() || !sendBackId) return;
+                  const id = sendBackId;
+                  const reason = sendBackReason;
+                  startTransition(async () => {
+                    try {
+                      await sendBackOrder(id, reason);
+                      setSendBackId(null);
+                    } catch (error: any) {
+                      alert(error.message || "Failed to send back order");
+                    }
+                  });
+                }}
+                disabled={isPendingAction || !sendBackReason.trim()}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-brand-red hover:bg-brand-red/90 rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isPendingAction ? "Sending..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Order</h3>
+              <p className="text-sm text-gray-500">This removes the order you logged. It cannot be undone.</p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteId(null)}
+                disabled={isPendingAction}
+                className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const id = deleteId;
+                  startTransition(async () => {
+                    try {
+                      await deleteOwnRequest(id);
+                      setDeleteId(null);
+                    } catch (error: any) {
+                      alert(error.message || "Failed to delete order");
+                    }
+                  });
+                }}
+                disabled={isPendingAction}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-brand-red hover:bg-brand-red/90 rounded-xl shadow-sm transition-colors disabled:opacity-50"
+              >
+                {isPendingAction ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

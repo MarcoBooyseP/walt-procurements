@@ -4,7 +4,8 @@ import * as React from 'react';
 import { db } from "@/db";
 import { requests, users } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
+import { auth } from "@/auth";
 import { resend } from "@/lib/resend";
 import { ApprovalNeededEmail } from "@/emails/approval-needed-email";
 import { ReadyForPickupEmail } from "@/emails/ready-for-pickup-email";
@@ -421,6 +422,29 @@ export async function sendToDirectorApproval(id: string) {
   await db.update(requests).set({ status: "PENDING_DIRECTOR" }).where(sql`id = ${id}`);
   revalidatePath("/admin");
   revalidatePath("/requests");
+  return { success: true };
+}
+
+export async function deleteOwnRequest(id: string) {
+  const session = await auth();
+  const sessionUser = session?.user as { id?: string; role?: string } | undefined;
+
+  if (!sessionUser?.id || sessionUser.role !== "ADMIN") {
+    throw new Error("You are not allowed to delete this order.");
+  }
+
+  const deleted = await db
+    .delete(requests)
+    .where(and(eq(requests.id, id), eq(requests.submittedByUserId, sessionUser.id)))
+    .returning({ id: requests.id });
+
+  if (deleted.length === 0) {
+    throw new Error("You can only delete orders that you logged.");
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/requests");
+  revalidatePath("/home");
   return { success: true };
 }
 

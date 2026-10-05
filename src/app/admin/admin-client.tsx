@@ -114,6 +114,7 @@ export function AdminClient({
               locations={locationsData}
               categories={categoriesData}
               suppliers={suppliersData}
+              currentUserId={dbUser?.id}
             />
           )}
 

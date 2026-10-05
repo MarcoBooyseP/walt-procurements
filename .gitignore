@@ -56,6 +56,8 @@ next-env.d.ts
 .agent_core/docs/data
 .agent_core/docs/data/
 
+.agent_core/**/.DS_Store
+
 # Agent Core state
 !.agent_core/
 !.agent_core/**
@@ -63,4 +65,3 @@ next-env.d.ts
 .agent_core/tmp/**
 .cache/pycache/
 .cache/pycache/**
-.agent_core/**/.DS_Store
