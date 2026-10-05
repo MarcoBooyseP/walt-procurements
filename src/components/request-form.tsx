@@ -8,17 +8,17 @@ type Location = { id: string; name: string };
 type Category = { id: string; name: string };
 type Supplier = { id: string; name: string };
 
-export function RequestForm({ 
-  userName, 
-  userId, 
+export function RequestForm({
+  userName,
+  userId,
   userRole,
   userLocationName,
   locations,
   categories,
   suppliers
-}: { 
-  userName: string; 
-  userId: string; 
+}: {
+  userName: string;
+  userId: string;
   userRole: string;
   userLocationName: string;
   locations: Location[];
@@ -376,7 +376,7 @@ export function RequestForm({
       )}
 
       {userRole !== "MANAGER" && userRole !== "DIRECTOR" && userRole !== "ADMIN" && (
-        <Link 
+        <Link
           href="/requests"
           className="mt-2 w-full py-4 px-6 bg-white border-2 border-gray-200 text-gray-700 text-[17px] font-bold rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-all flex items-center justify-center"
         >
