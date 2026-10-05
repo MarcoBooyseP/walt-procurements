@@ -20,3 +20,13 @@ description = "Refresh the worktree symlink config comment without changing conf
 id = "0004_remove_retired_default_docs"
 applied_at = "2026-07-30T13:17:16Z"
 description = "Remove retired default coding docs from installed project docs"
+
+[[applied]]
+id = "0005_daily_update_interval"
+applied_at = "2026-10-05T09:37:18Z"
+description = "Set harness auto-update interval to 1 day"
+
+[[applied]]
+id = "0006_agent_core_ds_store_gitignore"
+applied_at = "2026-10-05T09:37:18Z"
+description = "Ignore macOS Finder metadata throughout Agent Core state"

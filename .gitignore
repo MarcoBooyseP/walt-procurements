@@ -63,3 +63,4 @@ next-env.d.ts
 .agent_core/tmp/**
 .cache/pycache/
 .cache/pycache/**
+.agent_core/**/.DS_Store
